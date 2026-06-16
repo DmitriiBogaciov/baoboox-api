@@ -1,0 +1,8 @@
+export type ErrorCode =
+  | 'BAD_USER_INPUT'
+  | 'UNAUTHORIZED'
+  | 'FORBIDDEN'
+  | 'NOT_FOUND'
+  | 'CONFLICT'
+  | 'SERVICE_UNAVAILABLE'
+  | 'INTERNAL_SERVER_ERROR';

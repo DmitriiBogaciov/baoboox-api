@@ -1,0 +1,31 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+input CreateUserInput {
+  email: String!
+  firstName: String!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Mutation {
+  createUser(input: CreateUserInput!): UserEntity!
+}
+
+type Query {
+  health: String!
+  user(id: String!): UserEntity!
+  users: [UserEntity!]!
+}
+
+type UserEntity {
+  createdAt: DateTime!
+  email: String!
+  firstName: String!
+  id: ID!
+  updatedAt: DateTime!
+}
