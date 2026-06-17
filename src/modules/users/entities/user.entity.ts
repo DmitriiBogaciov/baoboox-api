@@ -5,7 +5,7 @@ export class UserEntity {
     @Field(() => ID)
     id!: string;
 
-    @Field()
+    @Field({ nullable: true })
     firstName?: string;
 
     @Field() 

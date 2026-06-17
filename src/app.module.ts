@@ -6,11 +6,13 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { GraphQLModule } from '@nestjs/graphql';
 import { MongooseModule } from '@nestjs/mongoose';
 import { join } from 'path';
+import { Request, Response } from 'express';
 import { HealthModule } from './modules/health/health.module';
 import { RedisModule } from './core/redis/redis.module';
 import { UsersModule } from './modules/users/users.module';
 import * as Joi from 'joi';
 import { ErrorsModule } from './common/errors/errors.module';
+import { AuthModule } from './modules/auth/auth.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -26,6 +28,8 @@ import { ErrorsModule } from './common/errors/errors.module';
         REDIS_PORT: Joi.number().default(6379),
         REDIS_PASSWORD: Joi.string().allow('').optional(),
         REDIS_DB: Joi.number().default(0),
+        JWT_ACCESS_SECRET: Joi.string().required(),
+        JWT_ACCESS_EXPIRES_IN: Joi.number().integer().positive().required(),
       })
     }),
     MongooseModule.forRootAsync({
@@ -42,6 +46,7 @@ import { ErrorsModule } from './common/errors/errors.module';
       inject: [ConfigService],
       driver: ApolloDriver,
       useFactory: async (configService: ConfigService) => ({
+        context: ({ req, res }: { req: Request; res: Response }) => ({ req, res }),
         autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
         sortSchema: true,
         graphiql: configService.get('NODE_ENV') !== 'production',
@@ -62,6 +67,7 @@ import { ErrorsModule } from './common/errors/errors.module';
     HealthModule,
     UsersModule,
     ErrorsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

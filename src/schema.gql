@@ -2,6 +2,12 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type AuthResponseEntity {
+  accessToken: String!
+  refreshToken: String!
+  user: UserEntity!
+}
+
 input CreateUserInput {
   email: String!
   firstName: String!
@@ -12,20 +18,36 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+input LoginInput {
+  email: String!
+  password: String!
+}
+
 type Mutation {
   createUser(input: CreateUserInput!): UserEntity!
+  login(input: LoginInput!): AuthResponseEntity!
+  logout: Boolean!
+  refresh: AuthResponseEntity!
+  register(input: RegisterInput!): AuthResponseEntity!
 }
 
 type Query {
   health: String!
+  me: UserEntity!
   user(id: String!): UserEntity!
   users: [UserEntity!]!
+}
+
+input RegisterInput {
+  email: String!
+  firstName: String
+  password: String!
 }
 
 type UserEntity {
   createdAt: DateTime!
   email: String!
-  firstName: String!
+  firstName: String
   id: ID!
   updatedAt: DateTime!
 }
