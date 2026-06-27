@@ -1,0 +1,38 @@
+info:
+  name: MySessions
+  type: graphql
+  seq: 6
+
+graphql:
+  method: POST
+  url: "{{host-gql}}"
+  body:
+    query: |-
+      query {
+        mySessions {
+          id
+          userId
+          userAgent
+          ip
+          isRevoked
+          createdAt
+          expiresAt
+          lastUsedAt
+        }
+      }
+  auth:
+    type: bearer
+    token: ""
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const token = bru.getEnvVar('accessToken')
+        req.setHeader('Authorization', `Bearer ${token}`)
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

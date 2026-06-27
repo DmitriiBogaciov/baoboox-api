@@ -1,0 +1,32 @@
+info:
+  name: Register
+  type: graphql
+  seq: 1
+
+graphql:
+  method: POST
+  url: "{{host-gql}}"
+  body:
+    query: |-
+      mutation {
+        register(
+          input: {
+            email: "dmitrii@gmail.com"
+            password: "123498765"
+          }
+        ) {
+          accessToken
+          user {
+            id
+            firstName
+            email
+          }
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -8,6 +8,17 @@ type AuthResponseEntity {
   user: UserEntity!
 }
 
+type AuthSessionEntity {
+  createdAt: DateTime!
+  expiresAt: DateTime!
+  id: ID!
+  ip: String
+  isRevoked: Boolean!
+  lastUsedAt: DateTime
+  userAgent: String
+  userId: String!
+}
+
 input CreateUserInput {
   email: String!
   firstName: String!
@@ -27,13 +38,16 @@ type Mutation {
   createUser(input: CreateUserInput!): UserEntity!
   login(input: LoginInput!): AuthResponseEntity!
   logout: Boolean!
+  logoutAll: Boolean!
   refresh: AuthResponseEntity!
   register(input: RegisterInput!): AuthResponseEntity!
+  revokeSession(input: RevokeSessionInput!): Boolean!
 }
 
 type Query {
   health: String!
   me: UserEntity!
+  mySessions: [AuthSessionEntity!]!
   user(id: String!): UserEntity!
   users: [UserEntity!]!
 }
@@ -42,6 +56,10 @@ input RegisterInput {
   email: String!
   firstName: String
   password: String!
+}
+
+input RevokeSessionInput {
+  sessionId: String!
 }
 
 type UserEntity {

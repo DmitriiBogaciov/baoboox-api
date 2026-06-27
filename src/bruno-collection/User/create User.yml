@@ -1,0 +1,31 @@
+info:
+  name: create User
+  type: graphql
+  seq: 2
+
+graphql:
+  method: POST
+  url: "{{host-gql}}"
+  body:
+    query: |-
+      mutation {
+        createUser(
+          input: {
+            firstName: "Dmitrii"
+            email: "dmitrii@example.com"
+          }
+        ) {
+          id
+          firstName
+          email
+          createdAt
+          updatedAt
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

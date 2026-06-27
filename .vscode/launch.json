@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug NestJS",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["run", "start:dev"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "restart": true,
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
+}

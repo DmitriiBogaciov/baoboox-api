@@ -1,0 +1,35 @@
+info:
+  name: revokeSession
+  type: graphql
+  seq: 7
+
+graphql:
+  method: POST
+  url: "{{host-gql}}"
+  body:
+    query: |-
+      mutation RevokeSession($input: RevokeSessionInput!) {
+        revokeSession(input: $input)
+      }
+    variables: |-
+      {
+        "input": {
+          "sessionId": "6a345a67aee5fdd3be3634d7"
+        }
+      }
+  auth:
+    type: bearer
+    token: ""
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const token = bru.getEnvVar('accessToken')
+        req.setHeader('Authorization', `Bearer ${token}`)
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

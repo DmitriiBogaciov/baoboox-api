@@ -1,17 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { JwtService } from '@nestjs/jwt';
-import { Model, Types } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
+import { Model, Types } from 'mongoose';
+import ms, { StringValue } from 'ms';
+
 import { ConflictAppError, UnauthorizedAppError } from '../../common/errors';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { UserEntity } from '../users/entities/user.entity';
 import { RegisterInput } from './dto/register.input';
 import { LoginInput } from './dto/login.input';
 import { AuthResponseEntity } from './entities/auth-response.entity';
+import { AuthSessionEntity } from './entities/auth-session.entity';
 import { PasswordService } from './password.service';
 import {
-    AuthSession,
+    Auth_Session,
     AuthSessionDocument,
 } from './schemas/auth-session.schema';
 
@@ -26,19 +29,27 @@ type RefreshPayload = {
     type: 'refresh';
 };
 
+export interface SessionMeta {
+    ip?: string;
+    userAgent?: string;
+}
+
 @Injectable()
 export class AuthService {
     constructor(
         @InjectModel(User.name)
         private readonly userModel: Model<UserDocument>,
-        @InjectModel(AuthSession.name)
+        @InjectModel(Auth_Session.name)
         private readonly authSessionModel: Model<AuthSessionDocument>,
         private readonly passwordService: PasswordService,
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
     ) { }
 
-    async register(input: RegisterInput): Promise<AuthResponseEntity> {
+    async register(
+        input: RegisterInput,
+        meta?: SessionMeta,
+    ): Promise<AuthResponseEntity> {
         const email = input.email.toLowerCase().trim();
 
         const existingUser = await this.userModel.findOne({ email }).exec();
@@ -55,10 +66,13 @@ export class AuthService {
             passwordHash,
         });
 
-        return this.issueTokens(user);
+        return this.issueTokens(user, meta);
     }
 
-    async login(input: LoginInput): Promise<AuthResponseEntity> {
+    async login(
+        input: LoginInput,
+        meta?: SessionMeta,
+    ): Promise<AuthResponseEntity> {
         const email = input.email.toLowerCase().trim();
 
         const user = await this.userModel
@@ -79,10 +93,13 @@ export class AuthService {
             throw new UnauthorizedAppError('Invalid email or password');
         }
 
-        return this.issueTokens(user);
+        return this.issueTokens(user, meta);
     }
 
-    async refresh(refreshToken: string): Promise<AuthResponseEntity> {
+    async refresh(
+        refreshToken: string,
+        meta?: SessionMeta,
+    ): Promise<AuthResponseEntity> {
         const payload = await this.verifyRefreshToken(refreshToken);
 
         const session = await this.authSessionModel
@@ -115,14 +132,19 @@ export class AuthService {
             throw new UnauthorizedAppError('User not found');
         }
 
-        return this.issueTokens(user);
+        return this.issueTokens(user, {
+            ip: meta?.ip ?? session.ip ?? undefined,
+            userAgent: meta?.userAgent ?? session.userAgent ?? undefined,
+        });
     }
 
     async logout(refreshToken: string): Promise<boolean> {
         try {
             const payload = await this.verifyRefreshToken(refreshToken);
 
-            const session = await this.authSessionModel.findById(payload.sessionId).exec();
+            const session = await this.authSessionModel
+                .findById(payload.sessionId)
+                .exec();
 
             if (!session) {
                 return true;
@@ -137,44 +159,96 @@ export class AuthService {
         }
     }
 
-    private async issueTokens(user: UserDocument): Promise<AuthResponseEntity> {
-        const refreshExpiresIn = Number(
-            this.configService.getOrThrow<string>('JWT_REFRESH_EXPIRES_IN'),
-        );
-
-        const session = await this.authSessionModel.create({
-            userId: new Types.ObjectId(user._id),
-            refreshTokenHash: 'temp',
-            expiresAt: new Date(Date.now() + refreshExpiresIn * 1000),
-            isRevoked: false,
-        });
-
-        const accessToken = await this.jwtService.signAsync(
+    async logoutAll(userId: string): Promise<boolean> {
+        await this.authSessionModel.updateMany(
             {
-                sub: user._id.toString(),
-                email: user.email,
-            } satisfies AccessPayload,
+                userId: new Types.ObjectId(userId),
+                isRevoked: false,
+            },
             {
-                secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
-                expiresIn: Number(
-                    this.configService.getOrThrow<string>('JWT_ACCESS_EXPIRES_IN'),
-                ),
+                $set: {
+                    isRevoked: true,
+                },
             },
         );
 
-        const refreshToken = await this.jwtService.signAsync(
+        return true;
+    }
+
+    async getMySessions(userId: string): Promise<AuthSessionEntity[]> {
+        const sessions = await this.authSessionModel
+            .find({ userId: new Types.ObjectId(userId) })
+            .sort({ createdAt: -1 })
+            .exec();
+
+        return sessions.map((session) => this.toAuthSessionEntity(session));
+    }
+
+    async revokeSession(userId: string, sessionId: string): Promise<boolean> {
+        const session = await this.authSessionModel.findOne({
+            _id: new Types.ObjectId(sessionId),
+            userId: new Types.ObjectId(userId),
+        });
+
+        if (!session) {
+            throw new NotFoundException('Session not found');
+        }
+
+        if (session.isRevoked) {
+            return true;
+        }
+
+        session.isRevoked = true;
+        await session.save();
+
+        return true;
+    }
+
+    private async issueTokens(
+        user: UserDocument,
+        meta?: SessionMeta,
+    ): Promise<AuthResponseEntity> {
+        const session = new this.authSessionModel({
+            userId: user._id,
+            refreshTokenHash: 'temp',
+            isRevoked: false,
+            expiresAt: this.getRefreshTokenExpiryDate(),
+            lastUsedAt: new Date(),
+            userAgent: meta?.userAgent ?? null,
+            ip: meta?.ip ?? null,
+        });
+
+        await session.save();
+
+        const accessToken = await this.jwtService.signAsync<AccessPayload>(
             {
                 sub: user._id.toString(),
-                sessionId: session.id,
+                email: user.email,
+            },
+            {
+                secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
+                expiresIn: (
+                    this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') ?? '15m'
+                ) as StringValue,
+            },
+        );
+
+        const refreshToken = await this.jwtService.signAsync<RefreshPayload>(
+            {
+                sub: user._id.toString(),
+                sessionId: session._id.toString(),
                 type: 'refresh',
-            } satisfies RefreshPayload,
+            },
             {
                 secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
-                expiresIn: refreshExpiresIn,
+                expiresIn: (
+                    this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ?? '7d'
+                ) as StringValue,
             },
         );
 
         session.refreshTokenHash = await this.passwordService.hash(refreshToken);
+        session.lastUsedAt = new Date();
         await session.save();
 
         return {
@@ -200,6 +274,18 @@ export class AuthService {
         }
     }
 
+    private getRefreshTokenExpiryDate(): Date {
+        const refreshExpiresIn =
+            this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ?? '7d';
+
+        const ttl = ms(refreshExpiresIn as StringValue);
+
+        if (typeof ttl !== 'number') {
+            throw new Error('Invalid JWT_REFRESH_EXPIRES_IN value');
+        }
+
+        return new Date(Date.now() + ttl);
+    }
 
     private toUserEntity(user: UserDocument): UserEntity {
         return {
@@ -208,6 +294,19 @@ export class AuthService {
             email: user.email,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
+        };
+    }
+
+    private toAuthSessionEntity(session: AuthSessionDocument): AuthSessionEntity {
+        return {
+            id: session._id.toString(),
+            userId: session.userId.toString(),
+            userAgent: session.userAgent ?? undefined,
+            ip: session.ip ?? undefined,
+            isRevoked: session.isRevoked ?? false,
+            createdAt: (session as any).createdAt,
+            expiresAt: session.expiresAt,
+            lastUsedAt: session.lastUsedAt ?? undefined,
         };
     }
 }

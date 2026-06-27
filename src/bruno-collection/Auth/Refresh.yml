@@ -1,0 +1,28 @@
+info:
+  name: Refresh
+  type: graphql
+  seq: 4
+
+graphql:
+  method: POST
+  url: "{{host-gql}}"
+  body:
+    query: |-
+      mutation {
+        refresh
+        {
+          accessToken
+          user {
+            id
+            firstName
+            email
+          }
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,6 @@
+name: Baoboox-dev
+variables:
+  - name: host-http
+    value: http://localhost:4000/api
+  - name: host-gql
+    value: http://localhost:4000/graphql

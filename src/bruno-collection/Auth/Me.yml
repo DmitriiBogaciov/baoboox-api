@@ -1,0 +1,33 @@
+info:
+  name: Me
+  type: graphql
+  seq: 3
+
+graphql:
+  method: POST
+  url: "{{host-gql}}"
+  body:
+    query: |-
+      query {
+        me {
+          id
+          firstName
+          email
+        }
+      }
+  auth:
+    type: bearer
+    token: ""
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        const token = bru.getEnvVar('accessToken')
+        req.setHeader('Authorization', `Bearer ${token}`)
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

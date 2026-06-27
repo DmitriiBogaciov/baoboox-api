@@ -1,22 +1,34 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { User } from '../../users/schemas/user.schema';
 
-@Schema({ timestamps: true, collection: 'auth_sessions' })
-export class AuthSession {
-  _id!: Types.ObjectId;
+export type AuthSessionDocument = HydratedDocument<Auth_Session>;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
-  userId!: Types.ObjectId;
+@Schema({ timestamps: true })
+export class Auth_Session {
+    @Prop({ type: Types.ObjectId, ref: User.name, required: true, index: true })
+    userId!: Types.ObjectId;
 
-  @Prop({ required: true, select: false })
-  refreshTokenHash!: string;
+    @Prop({ required: true, select: false })
+    refreshTokenHash!: string;
 
-  @Prop({ required: true, index: true })
-  expiresAt!: Date;
+    @Prop({ default: false, required: true, index: true })
+    isRevoked!: boolean;
 
-  @Prop({ default: false, index: true })
-  isRevoked?: boolean;
+    @Prop({ type: Date, required: true, index: true })
+    expiresAt!: Date;
+
+    @Prop({ type: Date, default: null })
+    lastUsedAt?: Date | null;
+
+    @Prop({ type: String, default: null })
+    userAgent?: string | null;
+
+    @Prop({ type: String, default: null })
+    ip?: string | null;
+
+    createdAt!: Date;
+    updatedAt!: Date;
 }
 
-export type AuthSessionDocument = HydratedDocument<AuthSession>;
-export const AuthSessionSchema = SchemaFactory.createForClass(AuthSession);
+export const AuthSessionSchema = SchemaFactory.createForClass(Auth_Session);

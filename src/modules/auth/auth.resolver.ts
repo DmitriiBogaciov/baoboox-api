@@ -1,10 +1,13 @@
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { UseGuards, UnauthorizedException } from '@nestjs/common';
-
+import { UseGuards } from '@nestjs/common';
+import { Request, Response } from 'express';
+import { UnauthorizedAppError } from 'src/common/errors';
 import { AuthService } from './auth.service';
 import { RegisterInput } from './dto/register.input';
 import { LoginInput } from './dto/login.input';
+import { RevokeSessionInput } from './dto/revoke-session.input';
 import { AuthResponseEntity } from './entities/auth-response.entity';
+import { AuthSessionEntity } from './entities/auth-session.entity';
 import { UserEntity } from '../users/entities/user.entity';
 import { GqlAuthGuard } from './gql-auth.guard';
 import { CurrentUser } from './current-user.decorator';
@@ -16,16 +19,28 @@ import { REFRESH_TOKEN_COOKIE_NAME } from './constants/auth-cookie.constant';
 
 @Resolver()
 export class AuthResolver {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
+
+  private getSessionMeta(req: Request) {
+    return {
+      ip: req.ip,
+      userAgent: req.get('user-agent') ?? undefined,
+    };
+  }
 
   @Mutation(() => AuthResponseEntity)
   async register(
     @Args('input') input: RegisterInput,
     @Context() ctx: any,
   ): Promise<AuthResponseEntity> {
-    const result: any = await this.authService.register(input);
+    const result: any = await this.authService.register(input, this.getSessionMeta(ctx.req));
+    const refreshToken = result.refreshToken;
 
-    setRefreshTokenCookie(ctx.res, result.refreshToken);
+    if (!refreshToken) {
+      throw new UnauthorizedAppError('Refresh token not generated');
+    }
+
+    setRefreshTokenCookie(ctx.res, refreshToken);
 
     return {
       accessToken: result.accessToken,
@@ -36,11 +51,17 @@ export class AuthResolver {
   @Mutation(() => AuthResponseEntity)
   async login(
     @Args('input') input: LoginInput,
-    @Context() ctx: any,
+    @Context() ctx: { req: Request; res: Response },
   ): Promise<AuthResponseEntity> {
-    const result: any = await this.authService.login(input);
+    const result = await this.authService.login(input, this.getSessionMeta(ctx.req));
 
-    setRefreshTokenCookie(ctx.res, result.refreshToken);
+    const refreshToken = result.refreshToken;
+
+    if (!refreshToken) {
+      throw new UnauthorizedAppError('Refresh token not generated');
+    }
+
+    setRefreshTokenCookie(ctx.res, refreshToken);
 
     return {
       accessToken: result.accessToken,
@@ -53,12 +74,18 @@ export class AuthResolver {
     const refreshToken = ctx.req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
 
     if (!refreshToken) {
-      throw new UnauthorizedException('Refresh token not found');
+      throw new UnauthorizedAppError('Refresh token not found');
     }
 
     const result: any = await this.authService.refresh(refreshToken);
 
-    setRefreshTokenCookie(ctx.res, result.refreshToken);
+    const newRefreshToken = result.refreshToken;
+
+    if (!newRefreshToken) {
+      throw new UnauthorizedAppError('Refresh token not generated');
+    }
+
+    setRefreshTokenCookie(ctx.res, newRefreshToken);
 
     return {
       accessToken: result.accessToken,
@@ -83,5 +110,31 @@ export class AuthResolver {
   @Query(() => UserEntity)
   async me(@CurrentUser() user: UserEntity): Promise<UserEntity> {
     return user;
+  }
+
+  @UseGuards(GqlAuthGuard)
+  @Query(() => [AuthSessionEntity])
+  async mySessions(@CurrentUser() user: UserEntity): Promise<AuthSessionEntity[]> {
+    return this.authService.getMySessions(user.id);
+  }
+
+  @UseGuards(GqlAuthGuard)
+  @Mutation(() => Boolean)
+  async revokeSession(
+    @CurrentUser() user: UserEntity,
+    @Args('input') input: RevokeSessionInput,
+  ): Promise<boolean> {
+    return this.authService.revokeSession(user.id, input.sessionId);
+  }
+
+  @UseGuards(GqlAuthGuard)
+  @Mutation(() => Boolean)
+  async logoutAll(
+    @CurrentUser() user: UserEntity,
+    @Context() ctx: { req: Request; res: Response },
+  ): Promise<boolean> {
+    await this.authService.logoutAll(user.id);
+    clearRefreshTokenCookie(ctx.res);
+    return true;
   }
 }
