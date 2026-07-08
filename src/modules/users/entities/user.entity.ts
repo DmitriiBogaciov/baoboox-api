@@ -1,4 +1,6 @@
 import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { UserRole } from '../enums/user-role.enum';
+import { Permission } from '../../auth/enums/permissions.enum';
 
 @ObjectType()
 export class UserEntity {
@@ -16,4 +18,10 @@ export class UserEntity {
 
     @Field()
     updatedAt!: Date; 
+
+    @Field(() => UserRole)
+    role!: UserRole;
+
+    @Field(() => [Permission] , { nullable: true })
+    permissions?: Permission[];
 }

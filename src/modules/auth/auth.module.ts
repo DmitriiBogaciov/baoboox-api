@@ -3,7 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-
+import { UsersService } from '../users/users.service';
 import { AuthResolver } from './auth.resolver';
 import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
@@ -30,7 +30,7 @@ import { Auth_Session, AuthSessionSchema } from './schemas/auth-session.schema';
       }),
     }),
   ],
-  providers: [AuthResolver, AuthService, PasswordService, JwtStrategy],
+  providers: [AuthResolver, AuthService, PasswordService, JwtStrategy, UsersService],
   exports: [AuthService],
 })
 export class AuthModule {}

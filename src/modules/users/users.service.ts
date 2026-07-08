@@ -1,13 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { CreateUserInput } from './dto/create-user.input';
+import { CreateUserInput, ChangeUserRoleInput } from './dto';
 import { User, UserDocument } from './schemas/user.schema';
+import { UserRole } from './enums/user-role.enum';
 import {
     ConflictAppError,
     NotFoundAppError,
     ServiceUnavailableAppError,
 } from '../../common/errors';
+import { BooleanSchemaDefinition } from 'mongoose';
 
 @Injectable()
 export class UsersService {
@@ -29,6 +31,7 @@ export class UsersService {
             const user = new this.userModel({
                 ...createUserInput,
                 email: createUserInput.email.toLowerCase(),
+                role: UserRole.READER
             });
 
             return await user.save();
@@ -53,5 +56,39 @@ export class UsersService {
         }
 
         return user;
+    }
+
+    async changeUserRole(input: ChangeUserRoleInput): Promise<UserDocument> {
+        const user = await this.userModel.findById(input.userId).exec();
+
+        if (!user) {
+            throw new NotFoundAppError('User not found');
+        }
+
+        user.role = input.newRole;
+
+        try {
+            return await user.save();
+        } catch {
+            throw new ServiceUnavailableAppError('Failed to change user role');
+        }
+    }
+
+    async deleteUser(id: string): Promise<Boolean> {
+        const user = await this.userModel.findById(id).exec();
+
+        if (!user) {
+            throw new NotFoundAppError('User not found');
+        }
+
+        try {
+            const result = await user.deleteOne();
+            if (result.deletedCount === 0) {
+                throw new ServiceUnavailableAppError('Failed to delete user');
+            }
+            return true;
+        } catch {
+            throw new ServiceUnavailableAppError('Failed to delete user');
+        }
     }
 }

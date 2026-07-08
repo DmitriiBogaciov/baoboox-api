@@ -1,0 +1,29 @@
+info:
+  name: Update Project
+  type: graphql
+  seq: 2
+
+graphql:
+  method: POST
+  url: "{{host-gql}}"
+  body:
+    query: |-
+      mutation{
+        createProject(
+          input: {
+            title: "First Project"
+          }
+        ){
+          id,
+          title
+        }
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

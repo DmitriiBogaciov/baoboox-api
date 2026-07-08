@@ -1,6 +1,6 @@
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { UnauthorizedAppError } from 'src/common/errors';
 import { AuthService } from './auth.service';
 import { RegisterInput } from './dto/register.input';
@@ -31,16 +31,17 @@ export class AuthResolver {
   @Mutation(() => AuthResponseEntity)
   async register(
     @Args('input') input: RegisterInput,
-    @Context() ctx: any,
+    @Context('req') req: Request,
+    @Context('res') res: Response,
   ): Promise<AuthResponseEntity> {
-    const result: any = await this.authService.register(input, this.getSessionMeta(ctx.req));
+    const result: any = await this.authService.register(input, this.getSessionMeta(req));
     const refreshToken = result.refreshToken;
 
     if (!refreshToken) {
       throw new UnauthorizedAppError('Refresh token not generated');
     }
 
-    setRefreshTokenCookie(ctx.res, refreshToken);
+    setRefreshTokenCookie(res, refreshToken);
 
     return {
       accessToken: result.accessToken,
@@ -51,9 +52,10 @@ export class AuthResolver {
   @Mutation(() => AuthResponseEntity)
   async login(
     @Args('input') input: LoginInput,
-    @Context() ctx: { req: Request; res: Response },
+    @Context('req') req: Request,
+    @Context('res') res: Response,
   ): Promise<AuthResponseEntity> {
-    const result = await this.authService.login(input, this.getSessionMeta(ctx.req));
+    const result = await this.authService.login(input, this.getSessionMeta(req));
 
     const refreshToken = result.refreshToken;
 
@@ -61,7 +63,7 @@ export class AuthResolver {
       throw new UnauthorizedAppError('Refresh token not generated');
     }
 
-    setRefreshTokenCookie(ctx.res, refreshToken);
+    setRefreshTokenCookie(res, refreshToken);
 
     return {
       accessToken: result.accessToken,
@@ -70,14 +72,17 @@ export class AuthResolver {
   }
 
   @Mutation(() => AuthResponseEntity)
-  async refresh(@Context() ctx: any): Promise<AuthResponseEntity> {
-    const refreshToken = ctx.req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
+  async refresh(
+    @Context('req') req: Request,
+    @Context('res') res: Response
+  ): Promise<AuthResponseEntity> {
+    const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
 
     if (!refreshToken) {
       throw new UnauthorizedAppError('Refresh token not found');
     }
 
-    const result: any = await this.authService.refresh(refreshToken);
+    const result: any = await this.authService.refresh(refreshToken, this.getSessionMeta(req));
 
     const newRefreshToken = result.refreshToken;
 
@@ -85,7 +90,7 @@ export class AuthResolver {
       throw new UnauthorizedAppError('Refresh token not generated');
     }
 
-    setRefreshTokenCookie(ctx.res, newRefreshToken);
+    setRefreshTokenCookie(res, newRefreshToken);
 
     return {
       accessToken: result.accessToken,
@@ -94,14 +99,17 @@ export class AuthResolver {
   }
 
   @Mutation(() => Boolean)
-  async logout(@Context() ctx: any): Promise<boolean> {
-    const refreshToken = ctx.req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
+  async logout(
+    @Context('req') req: Request,
+    @Context('res') res: Response,
+  ): Promise<boolean> {
+    const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
 
     if (refreshToken) {
       await this.authService.logout(refreshToken);
     }
 
-    clearRefreshTokenCookie(ctx.res);
+    clearRefreshTokenCookie(res);
 
     return true;
   }
@@ -131,10 +139,11 @@ export class AuthResolver {
   @Mutation(() => Boolean)
   async logoutAll(
     @CurrentUser() user: UserEntity,
-    @Context() ctx: { req: Request; res: Response },
+    @Context('req') req: Request,
+    @Context('res') res: Response,
   ): Promise<boolean> {
     await this.authService.logoutAll(user.id);
-    clearRefreshTokenCookie(ctx.res);
+    clearRefreshTokenCookie(res);
     return true;
   }
 }

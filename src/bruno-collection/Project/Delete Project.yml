@@ -1,0 +1,34 @@
+info:
+  name: Delete Project
+  type: graphql
+  seq: 3
+
+graphql:
+  method: POST
+  url: "{{host-gql}}"
+  body:
+    query: |-
+      mutation{
+        updateProject(
+          input: {
+            id: "6a4e1c0b9cf916ffaae4efb7",
+            data: {
+              title: "Second Project",
+              description: "3 update"
+            }
+          }
+        ){
+          id,
+          title,
+          description
+        }
+      }
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

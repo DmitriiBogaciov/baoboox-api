@@ -4,16 +4,19 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-
+import { UserRole } from '../users/enums/user-role.enum';
+import { Permission } from './enums/permissions.enum';
 import { User, UserDocument } from '../users/schemas/user.schema';
 
 type JwtPayload = {
   sub: string;
   email: string;
+  role: UserRole;
+  permissions: Permission[];
 };
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
     configService: ConfigService,
     @InjectModel(User.name)
@@ -37,6 +40,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       id: user._id.toString(),
       email: user.email,
       firstName: user.firstName,
+      role: user.role,
+      permissions: payload.permissions,
     };
   }
 }

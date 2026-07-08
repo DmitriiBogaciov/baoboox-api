@@ -19,6 +19,16 @@ type AuthSessionEntity {
   userId: String!
 }
 
+input ChangeUserRoleInput {
+  newRole: UserRole!
+  userId: String!
+}
+
+input CreateProjectInput {
+  description: String
+  title: String
+}
+
 input CreateUserInput {
   email: String!
   firstName: String!
@@ -29,22 +39,91 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+input DeleteUserInput {
+  userId: String!
+}
+
 input LoginInput {
   email: String!
   password: String!
 }
 
 type Mutation {
+  changeUserRole(input: ChangeUserRoleInput!): UserEntity!
+  createProject(input: CreateProjectInput!): ProjectEntity!
   createUser(input: CreateUserInput!): UserEntity!
+  deleteProject(projectId: String!): ProjectEntity!
+  deleteUser(input: DeleteUserInput!): Boolean!
   login(input: LoginInput!): AuthResponseEntity!
   logout: Boolean!
   logoutAll: Boolean!
+  publishProject(projectId: String!): ProjectEntity!
   refresh: AuthResponseEntity!
   register(input: RegisterInput!): AuthResponseEntity!
   revokeSession(input: RevokeSessionInput!): Boolean!
+  updateProject(input: UpdateProjectInput!): ProjectEntity!
+}
+
+type PaginatedProjectsResponse {
+  items: [ProjectEntity!]!
+  meta: PaginationMeta!
+}
+
+type PaginationMeta {
+  hasNextPage: Boolean!
+  hasPrevPage: Boolean!
+  limit: Int!
+  page: Int!
+  total: Int!
+  totalPages: Int!
+}
+
+enum Permission {
+  ADMIN_ACCESS
+  BOOKMARK_CREATE
+  COMMENT_CREATE
+  COMMENT_DELETE_OWN
+  COMMENT_MODERATE
+  CONTENT_HIDE
+  PROJECT_CREATE
+  PROJECT_DELETE_ANY
+  PROJECT_DELETE_OWN
+  PROJECT_PUBLISH
+  PROJECT_UPDATE_ANY
+  PROJECT_UPDATE_OWN
+  PROJECT_VIEW_ANY
+  REPORT_CREATE
+  REPORT_REVIEW
+  USER_DELETE
+  USER_ROLE_UPDATE
+}
+
+type ProjectEntity {
+  authorId: ID!
+  createdAt: DateTime!
+  description: String
+  id: ID!
+  status: ProjectStatus!
+  title: String!
+  updatedAt: DateTime!
+}
+
+enum ProjectSortBy {
+  CREATED_AT
+  PUBLISHED_AT
+  TITLE
+}
+
+"""The status of the project"""
+enum ProjectStatus {
+  DRAFT
+  PUBLISHED
 }
 
 type Query {
+  getAllProjects: String!
+  getPublicProjects(authorId: String, limit: Int = 12, page: Int = 1, search: String, sortBy: ProjectSortBy = PUBLISHED_AT, sortOrder: SortOrder = DESC): PaginatedProjectsResponse!
+  getUserProjects: [ProjectEntity!]!
   health: String!
   me: UserEntity!
   mySessions: [AuthSessionEntity!]!
@@ -62,10 +141,34 @@ input RevokeSessionInput {
   sessionId: String!
 }
 
+enum SortOrder {
+  ASC
+  DESC
+}
+
+input UpdateProjectDataInput {
+  description: String
+  title: String
+}
+
+input UpdateProjectInput {
+  data: UpdateProjectDataInput!
+  id: String!
+}
+
 type UserEntity {
   createdAt: DateTime!
   email: String!
   firstName: String
   id: ID!
+  permissions: [Permission!]
+  role: UserRole!
   updatedAt: DateTime!
+}
+
+enum UserRole {
+  ADMIN
+  AUTHOR
+  MODERATOR
+  READER
 }

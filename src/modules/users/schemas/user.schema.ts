@@ -1,11 +1,16 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import { UserRole } from '../enums/user-role.enum';
+import { Permission } from '../../auth/enums/permissions.enum';
+import { registerEnumType } from '@nestjs/graphql';
 
-// Роли можно вынести в отдельный enum в папке common/enums
-export enum Role {
-    USER = 'user',
-    ADMIN = 'admin',
-}
+registerEnumType(UserRole, {
+    name: 'UserRole',
+})
+
+registerEnumType(Permission, {
+    name: 'Permission',
+})
 
 export type UserDocument = User & Document;
 
@@ -20,14 +25,14 @@ export class User {
     @Prop({ required: false, trim: true })
     firstName?: string;
 
-    //   @Prop({ required: false, trim: true })
-    //   lastName?: string;
+    @Prop({ required: false, trim: true })
+    lastName?: string;
 
-    //   @Prop({ type: [String], enum: Role, default: [Role.USER] })
-    //   roles!: Role[];
+    @Prop({ required: true, type: String, enum: Object.values(UserRole), default: UserRole.READER })
+    role!: UserRole;
 
-    //   @Prop({ default: false })
-    //   isEmailVerified!: boolean;
+    @Prop({ default: false })
+    isEmailVerified!: boolean;
 
     //   @Prop({ required: false })
     //   lastLoginAt?: Date;

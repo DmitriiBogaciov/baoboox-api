@@ -13,6 +13,7 @@ import { UsersModule } from './modules/users/users.module';
 import * as Joi from 'joi';
 import { ErrorsModule } from './common/errors/errors.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { ProjectModule } from './modules/project/project.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -29,7 +30,9 @@ import { AuthModule } from './modules/auth/auth.module';
         REDIS_PASSWORD: Joi.string().allow('').optional(),
         REDIS_DB: Joi.number().default(0),
         JWT_ACCESS_SECRET: Joi.string().required(),
-        JWT_ACCESS_EXPIRES_IN: Joi.number().integer().positive().required(),
+        JWT_ACCESS_EXPIRES_IN: Joi.string().required(),
+        JWT_REFRESH_SECRET: Joi.string().required(),
+        JWT_REFRESH_EXPIRES_IN: Joi.string().required(),
       })
     }),
     MongooseModule.forRootAsync({
@@ -68,6 +71,7 @@ import { AuthModule } from './modules/auth/auth.module';
     UsersModule,
     ErrorsModule,
     AuthModule,
+    ProjectModule,
   ],
   controllers: [AppController],
   providers: [AppService],

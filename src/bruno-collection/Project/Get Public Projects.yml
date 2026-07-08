@@ -1,0 +1,43 @@
+info:
+  name: Get Public Projects
+  type: graphql
+  seq: 4
+
+graphql:
+  method: POST
+  url: "{{host-gql}}"
+  body:
+    query: |-
+      query {
+        getPublicProjects(
+          page: 1
+          limit: 12
+          # search: "test"
+          # sortBy: PUBLISHED_AT
+          sortOrder: DESC
+        ) {
+          items {
+            id
+            title
+            description
+            status
+          }
+          meta {
+            page
+            limit
+            total
+            totalPages
+            hasNextPage
+            hasPrevPage
+          }
+        }
+      }
+  auth:
+    type: bearer
+    token: ""
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

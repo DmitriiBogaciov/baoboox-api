@@ -1,0 +1,27 @@
+info:
+  name: Get User Projects
+  type: graphql
+  seq: 5
+
+graphql:
+  method: POST
+  url: "{{host-gql}}"
+  body:
+    query: |-
+      query{
+        getPublishedProjects{
+          id
+          title
+          description
+          isPublished
+        }
+      }
+  auth:
+    type: bearer
+    token: ""
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

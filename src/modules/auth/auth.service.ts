@@ -1,11 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Model, Types } from 'mongoose';
 import ms, { StringValue } from 'ms';
-
-import { ConflictAppError, UnauthorizedAppError } from '../../common/errors';
+import { UserRole } from '../users/enums/user-role.enum';
+import { Permission } from './enums/permissions.enum';
+import { getPermissionsByRole } from './utils/get-permissions-by-role.util';
+import { ConflictAppError, UnauthorizedAppError, NotFoundAppError } from '../../common/errors';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { UserEntity } from '../users/entities/user.entity';
 import { RegisterInput } from './dto/register.input';
@@ -21,6 +23,8 @@ import {
 type AccessPayload = {
     sub: string;
     email: string;
+    role: UserRole;
+    permissions: Permission[];
 };
 
 type RefreshPayload = {
@@ -64,6 +68,7 @@ export class AuthService {
             firstName: input.firstName?.trim(),
             email,
             passwordHash,
+            role: UserRole.READER,
         });
 
         return this.issueTokens(user, meta);
@@ -119,7 +124,7 @@ export class AuthService {
         if (!isValid) {
             session.isRevoked = true;
             await session.save();
-
+            
             throw new UnauthorizedAppError('Refresh token reuse detected');
         }
 
@@ -191,7 +196,7 @@ export class AuthService {
         });
 
         if (!session) {
-            throw new NotFoundException('Session not found');
+            throw new NotFoundAppError('Session not found');
         }
 
         if (session.isRevoked) {
@@ -220,10 +225,14 @@ export class AuthService {
 
         await session.save();
 
+        const permissions = getPermissionsByRole(user.role);
+
         const accessToken = await this.jwtService.signAsync<AccessPayload>(
             {
                 sub: user._id.toString(),
                 email: user.email,
+                role: user.role,
+                permissions: permissions,
             },
             {
                 secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
@@ -260,16 +269,19 @@ export class AuthService {
 
     private async verifyRefreshToken(token: string): Promise<RefreshPayload> {
         try {
+            console.log('Verifying refresh token:', token);
             const payload = await this.jwtService.verifyAsync<RefreshPayload>(token, {
                 secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
             });
 
             if (payload.type !== 'refresh') {
+                console.error('Invalid token type:', payload.type);
                 throw new UnauthorizedAppError('Invalid refresh token');
             }
-
+            console.log('Refresh token verified successfully:', payload);
             return payload;
-        } catch {
+        } catch (error) {
+            console.error('Error verifying refresh token:', error);
             throw new UnauthorizedAppError('Invalid refresh token');
         }
     }
@@ -294,6 +306,8 @@ export class AuthService {
             email: user.email,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
+            role: user.role,
+            // permissions: getPermissionsByRole(user.role),
         };
     }
 

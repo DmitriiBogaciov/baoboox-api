@@ -1,7 +1,7 @@
 info:
-  name: Create User
+  name: Delete User
   type: graphql
-  seq: 2
+  seq: 4
 
 graphql:
   method: POST
