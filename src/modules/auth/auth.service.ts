@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Model, Types } from 'mongoose';
 import ms, { StringValue } from 'ms';
-import { UserRole } from '../users/enums/user-role.enum';
+import { UserRole } from '../../generated/prisma/enums';
 import { Permission } from './enums/permissions.enum';
 import { getPermissionsByRole } from './utils/get-permissions-by-role.util';
 import { ConflictAppError, UnauthorizedAppError, NotFoundAppError } from '../../common/errors';
@@ -15,6 +15,8 @@ import { LoginInput } from './dto/login.input';
 import { AuthResponseEntity } from './entities/auth-response.entity';
 import { AuthSessionEntity } from './entities/auth-session.entity';
 import { PasswordService } from './password.service';
+import { PrismaService } from '../prisma/prisma.service'
+import { createId } from '@paralleldrive/cuid2';
 import {
     Auth_Session,
     AuthSessionDocument,
@@ -48,7 +50,32 @@ export class AuthService {
         private readonly passwordService: PasswordService,
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
+        private readonly prismaService: PrismaService,
     ) { }
+
+    // async register(
+    //     input: RegisterInput,
+    //     meta?: SessionMeta,
+    // ): Promise<AuthResponseEntity> {
+    //     const email = input.email.toLowerCase().trim();
+
+    //     const existingUser = await this.userModel.findOne({ email }).exec();
+
+    //     if (existingUser) {
+    //         throw new ConflictAppError('Email already in use');
+    //     }
+
+    //     const passwordHash = await this.passwordService.hash(input.password);
+
+    //     const user = await this.userModel.create({
+    //         firstName: input.firstName?.trim(),
+    //         email,
+    //         passwordHash,
+    //         role: UserRole.READER,
+    //     });
+
+    //     return this.issueTokens(user, meta);
+    // }
 
     async register(
         input: RegisterInput,
@@ -56,7 +83,9 @@ export class AuthService {
     ): Promise<AuthResponseEntity> {
         const email = input.email.toLowerCase().trim();
 
-        const existingUser = await this.userModel.findOne({ email }).exec();
+        const existingUser = await this.prismaService.user.findUnique({
+            where: { email },
+        });
 
         if (existingUser) {
             throw new ConflictAppError('Email already in use');
@@ -64,172 +93,224 @@ export class AuthService {
 
         const passwordHash = await this.passwordService.hash(input.password);
 
-        const user = await this.userModel.create({
-            firstName: input.firstName?.trim(),
-            email,
-            passwordHash,
-            role: UserRole.READER,
+        const createdUser = await this.prismaService.user.create({
+            data: {
+                firstName: input.firstName?.trim(),
+                email,
+                password: passwordHash,
+            },
         });
 
-        return this.issueTokens(user, meta);
+        return this.issueTokens(createdUser, meta);
     }
 
-    async login(
-        input: LoginInput,
-        meta?: SessionMeta,
-    ): Promise<AuthResponseEntity> {
-        const email = input.email.toLowerCase().trim();
 
-        const user = await this.userModel
-            .findOne({ email })
-            .select('+passwordHash')
-            .exec();
 
-        if (!user || !user.passwordHash) {
-            throw new UnauthorizedAppError('Invalid email or password');
-        }
+    // async login(
+    //     input: LoginInput,
+    //     meta?: SessionMeta,
+    // ): Promise<AuthResponseEntity> {
+    //     const email = input.email.toLowerCase().trim();
 
-        const isPasswordValid = await this.passwordService.compare(
-            input.password,
-            user.passwordHash,
-        );
+    //     const user = await this.userModel
+    //         .findOne({ email })
+    //         .select('+passwordHash')
+    //         .exec();
 
-        if (!isPasswordValid) {
-            throw new UnauthorizedAppError('Invalid email or password');
-        }
+    //     if (!user || !user.passwordHash) {
+    //         throw new UnauthorizedAppError('Invalid email or password');
+    //     }
 
-        return this.issueTokens(user, meta);
-    }
+    //     const isPasswordValid = await this.passwordService.compare(
+    //         input.password,
+    //         user.passwordHash,
+    //     );
 
-    async refresh(
-        refreshToken: string,
-        meta?: SessionMeta,
-    ): Promise<AuthResponseEntity> {
-        const payload = await this.verifyRefreshToken(refreshToken);
+    //     if (!isPasswordValid) {
+    //         throw new UnauthorizedAppError('Invalid email or password');
+    //     }
 
-        const session = await this.authSessionModel
-            .findById(payload.sessionId)
-            .select('+refreshTokenHash')
-            .exec();
+    //     return this.issueTokens1(user, meta);
+    // }
 
-        if (!session || session.isRevoked || session.expiresAt <= new Date()) {
-            throw new UnauthorizedAppError('Refresh session is invalid');
-        }
+    // async refresh(
+    //     refreshToken: string,
+    //     meta?: SessionMeta,
+    // ): Promise<AuthResponseEntity> {
+    //     const payload = await this.verifyRefreshToken(refreshToken);
 
-        const isValid = await this.passwordService.compare(
-            refreshToken,
-            session.refreshTokenHash,
-        );
+    //     const session = await this.authSessionModel
+    //         .findById(payload.sessionId)
+    //         .select('+refreshTokenHash')
+    //         .exec();
 
-        if (!isValid) {
-            session.isRevoked = true;
-            await session.save();
+    //     if (!session || session.isRevoked || session.expiresAt <= new Date()) {
+    //         throw new UnauthorizedAppError('Refresh session is invalid');
+    //     }
+
+    //     const isValid = await this.passwordService.compare(
+    //         refreshToken,
+    //         session.refreshTokenHash,
+    //     );
+
+    //     if (!isValid) {
+    //         session.isRevoked = true;
+    //         await session.save();
             
-            throw new UnauthorizedAppError('Refresh token reuse detected');
-        }
+    //         throw new UnauthorizedAppError('Refresh token reuse detected');
+    //     }
 
-        session.isRevoked = true;
-        await session.save();
+    //     session.isRevoked = true;
+    //     await session.save();
 
-        const user = await this.userModel.findById(payload.sub).exec();
+    //     const user = await this.userModel.findById(payload.sub).exec();
 
-        if (!user) {
-            throw new UnauthorizedAppError('User not found');
-        }
+    //     if (!user) {
+    //         throw new UnauthorizedAppError('User not found');
+    //     }
 
-        return this.issueTokens(user, {
-            ip: meta?.ip ?? session.ip ?? undefined,
-            userAgent: meta?.userAgent ?? session.userAgent ?? undefined,
-        });
-    }
+    //     return this.issueTokens1(user, {
+    //         ip: meta?.ip ?? session.ip ?? undefined,
+    //         userAgent: meta?.userAgent ?? session.userAgent ?? undefined,
+    //     });
+    // }
 
-    async logout(refreshToken: string): Promise<boolean> {
-        try {
-            const payload = await this.verifyRefreshToken(refreshToken);
+    // async logout(refreshToken: string): Promise<boolean> {
+    //     try {
+    //         const payload = await this.verifyRefreshToken(refreshToken);
 
-            const session = await this.authSessionModel
-                .findById(payload.sessionId)
-                .exec();
+    //         const session = await this.authSessionModel
+    //             .findById(payload.sessionId)
+    //             .exec();
 
-            if (!session) {
-                return true;
-            }
+    //         if (!session) {
+    //             return true;
+    //         }
 
-            session.isRevoked = true;
-            await session.save();
+    //         session.isRevoked = true;
+    //         await session.save();
 
-            return true;
-        } catch {
-            return true;
-        }
-    }
+    //         return true;
+    //     } catch {
+    //         return true;
+    //     }
+    // }
 
-    async logoutAll(userId: string): Promise<boolean> {
-        await this.authSessionModel.updateMany(
-            {
-                userId: new Types.ObjectId(userId),
-                isRevoked: false,
-            },
-            {
-                $set: {
-                    isRevoked: true,
-                },
-            },
-        );
+    // async logoutAll(userId: string): Promise<boolean> {
+    //     await this.authSessionModel.updateMany(
+    //         {
+    //             userId: new Types.ObjectId(userId),
+    //             isRevoked: false,
+    //         },
+    //         {
+    //             $set: {
+    //                 isRevoked: true,
+    //             },
+    //         },
+    //     );
 
-        return true;
-    }
+    //     return true;
+    // }
 
-    async getMySessions(userId: string): Promise<AuthSessionEntity[]> {
-        const sessions = await this.authSessionModel
-            .find({ userId: new Types.ObjectId(userId) })
-            .sort({ createdAt: -1 })
-            .exec();
+    // async getMySessions(userId: string): Promise<AuthSessionEntity[]> {
+    //     const sessions = await this.authSessionModel
+    //         .find({ userId: new Types.ObjectId(userId) })
+    //         .sort({ createdAt: -1 })
+    //         .exec();
 
-        return sessions.map((session) => this.toAuthSessionEntity(session));
-    }
+    //     return sessions.map((session) => this.toAuthSessionEntity(session));
+    // }
 
-    async revokeSession(userId: string, sessionId: string): Promise<boolean> {
-        const session = await this.authSessionModel.findOne({
-            _id: new Types.ObjectId(sessionId),
-            userId: new Types.ObjectId(userId),
-        });
+    // async revokeSession(userId: string, sessionId: string): Promise<boolean> {
+    //     const session = await this.authSessionModel.findOne({
+    //         _id: new Types.ObjectId(sessionId),
+    //         userId: new Types.ObjectId(userId),
+    //     });
 
-        if (!session) {
-            throw new NotFoundAppError('Session not found');
-        }
+    //     if (!session) {
+    //         throw new NotFoundAppError('Session not found');
+    //     }
 
-        if (session.isRevoked) {
-            return true;
-        }
+    //     if (session.isRevoked) {
+    //         return true;
+    //     }
 
-        session.isRevoked = true;
-        await session.save();
+    //     session.isRevoked = true;
+    //     await session.save();
 
-        return true;
-    }
+    //     return true;
+    // }
+
+    // private async issueTokens1(
+    //     user: UserEntity,
+    //     meta?: SessionMeta,
+    // ): Promise<AuthResponseEntity> {
+    //     const session = new this.authSessionModel({
+    //         userId: user._id,
+    //         refreshTokenHash: 'temp',
+    //         isRevoked: false,
+    //         expiresAt: this.getRefreshTokenExpiryDate(),
+    //         lastUsedAt: new Date(),
+    //         userAgent: meta?.userAgent ?? null,
+    //         ip: meta?.ip ?? null,
+    //     });
+
+    //     await session.save();
+
+    //     const permissions = getPermissionsByRole(user.role);
+
+    //     const accessToken = await this.jwtService.signAsync<AccessPayload>(
+    //         {
+    //             sub: user._id.toString(),
+    //             email: user.email,
+    //             role: user.role,
+    //             permissions: permissions,
+    //         },
+    //         {
+    //             secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
+    //             expiresIn: (
+    //                 this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') ?? '15m'
+    //             ) as StringValue,
+    //         },
+    //     );
+
+    //     const refreshToken = await this.jwtService.signAsync<RefreshPayload>(
+    //         {
+    //             sub: user._id.toString(),
+    //             sessionId: session._id.toString(),
+    //             type: 'refresh',
+    //         },
+    //         {
+    //             secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
+    //             expiresIn: (
+    //                 this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ?? '7d'
+    //             ) as StringValue,
+    //         },
+    //     );
+
+    //     session.refreshTokenHash = await this.passwordService.hash(refreshToken);
+    //     session.lastUsedAt = new Date();
+    //     await session.save();
+
+    //     return {
+    //         accessToken,
+    //         refreshToken,
+    //         user: this.toUserEntityyy(user),
+    //     };
+    // }
 
     private async issueTokens(
-        user: UserDocument,
+        user: UserEntity,
         meta?: SessionMeta,
     ): Promise<AuthResponseEntity> {
-        const session = new this.authSessionModel({
-            userId: user._id,
-            refreshTokenHash: 'temp',
-            isRevoked: false,
-            expiresAt: this.getRefreshTokenExpiryDate(),
-            lastUsedAt: new Date(),
-            userAgent: meta?.userAgent ?? null,
-            ip: meta?.ip ?? null,
-        });
 
-        await session.save();
+        const sessionId = createId();
 
         const permissions = getPermissionsByRole(user.role);
 
         const accessToken = await this.jwtService.signAsync<AccessPayload>(
             {
-                sub: user._id.toString(),
+                sub: user.id.toString(),
                 email: user.email,
                 role: user.role,
                 permissions: permissions,
@@ -244,8 +325,8 @@ export class AuthService {
 
         const refreshToken = await this.jwtService.signAsync<RefreshPayload>(
             {
-                sub: user._id.toString(),
-                sessionId: session._id.toString(),
+                sub: user.id.toString(),
+                sessionId,
                 type: 'refresh',
             },
             {
@@ -256,9 +337,20 @@ export class AuthService {
             },
         );
 
-        session.refreshTokenHash = await this.passwordService.hash(refreshToken);
-        session.lastUsedAt = new Date();
-        await session.save();
+        const refreshTokenHash  = await this.passwordService.hash(refreshToken);
+
+        await this.prismaService.authSession.create({
+            data: {
+                id: sessionId,
+                userId: user.id,
+                refreshTokenHash,
+                isRevoked: false,
+                expiresAt: this.getRefreshTokenExpiryDate(),
+                lastUsedAt: new Date(),
+                userAgent: meta?.userAgent,
+                ip: meta?.ip
+            }
+        })
 
         return {
             accessToken,
@@ -299,9 +391,9 @@ export class AuthService {
         return new Date(Date.now() + ttl);
     }
 
-    private toUserEntity(user: UserDocument): UserEntity {
+    private toUserEntity(user: UserEntity): UserEntity {
         return {
-            id: user._id.toString(),
+            id: user.id.toString(),
             firstName: user.firstName,
             email: user.email,
             createdAt: user.createdAt,
@@ -311,10 +403,10 @@ export class AuthService {
         };
     }
 
-    private toAuthSessionEntity(session: AuthSessionDocument): AuthSessionEntity {
+    private toAuthSessionEntity(session: AuthSessionEntity): AuthSessionEntity {
         return {
-            id: session._id.toString(),
-            userId: session.userId.toString(),
+            id: session.id,
+            userId: session.userId,
             userAgent: session.userAgent ?? undefined,
             ip: session.ip ?? undefined,
             isRevoked: session.isRevoked ?? false,

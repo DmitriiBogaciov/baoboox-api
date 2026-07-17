@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { CreateUserInput, ChangeUserRoleInput } from './dto';
 import { User, UserDocument } from './schemas/user.schema';
 import { UserRole } from './enums/user-role.enum';
+import { PrismaService } from '../prisma/prisma.service';
 import {
     ConflictAppError,
     NotFoundAppError,
@@ -17,28 +18,6 @@ export class UsersService {
         @InjectModel(User.name)
         private readonly userModel: Model<UserDocument>,
     ) { }
-
-    async create(createUserInput: CreateUserInput): Promise<UserDocument> {
-        const existingUser = await this.userModel
-            .findOne({ email: createUserInput.email.toLowerCase() })
-            .exec();
-
-        if (existingUser) {
-            throw new ConflictAppError('Email already in use');
-        }
-
-        try {
-            const user = new this.userModel({
-                ...createUserInput,
-                email: createUserInput.email.toLowerCase(),
-                role: UserRole.READER
-            });
-
-            return await user.save();
-        } catch {
-            throw new ServiceUnavailableAppError('Failed to create user');
-        }
-    }
 
     async findAll(): Promise<UserDocument[]> {
         try {

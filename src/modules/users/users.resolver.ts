@@ -15,9 +15,9 @@ import { Permission } from '../auth/enums/permissions.enum';
 export class UsersResolver {
   constructor(private readonly usersService: UsersService) { }
 
-  private toEntity(user: UserDocument): UserEntity {
+  private toEntity(user: UserEntity): UserEntity {
     return {
-      id: this.toStringId(user._id),
+      id: this.toStringId(user.id),
       firstName: user.firstName,
       email: user.email,
       createdAt: user.createdAt,
@@ -34,42 +34,34 @@ export class UsersResolver {
     return String(id);
   }
 
-  @Query(() => [UserEntity], { name: 'users' })
-  async findAll(): Promise<UserEntity[]> {
-    const users = await this.usersService.findAll();
-    return users.map((user) => this.toEntity(user));
-  }
+  // @Query(() => [UserEntity], { name: 'users' })
+  // async findAll(): Promise<UserEntity[]> {
+  //   const users = await this.usersService.findAll();
+  //   return users.map((user) => this.toEntity(user));
+  // }
 
-  @Query(() => UserEntity, { name: 'user' })
-  async findById(@Args('id') id: string): Promise<UserEntity> {
-    const user = await this.usersService.findById(id);
-    return this.toEntity(user);
-  }
+  // @Query(() => UserEntity, { name: 'user' })
+  // async findById(@Args('id') id: string): Promise<UserEntity> {
+  //   const user = await this.usersService.findById(id);
+  //   return this.toEntity(user);
+  // }
 
-  @Mutation(() => UserEntity)
-  async createUser(
-    @Args('input') input: CreateUserInput,
-  ): Promise<UserEntity> {
-    const user = await this.usersService.create(input);
-    return this.toEntity(user);
-  }
+  // @UseGuards(GqlAuthGuard, PermissionsGuard)
+  // @Permissions(Permission.USER_ROLE_UPDATE)
+  // @Mutation(() => UserEntity, { name: 'changeUserRole' })
+  // async changeUserRole(
+  //   @Args('input') input: ChangeUserRoleInput,
+  // ): Promise<UserEntity> {
+  //   const user = await this.usersService.changeUserRole(input);
+  //   return this.toEntity(user);
+  // }
 
-  @UseGuards(GqlAuthGuard, PermissionsGuard)
-  @Permissions(Permission.USER_ROLE_UPDATE)
-  @Mutation(() => UserEntity, { name: 'changeUserRole' })
-  async changeUserRole(
-    @Args('input') input: ChangeUserRoleInput,
-  ): Promise<UserEntity> {
-    const user = await this.usersService.changeUserRole(input);
-    return this.toEntity(user);
-  }
-
-  @UseGuards(GqlAuthGuard, PermissionsGuard)
-  @Permissions(Permission.USER_DELETE)
-  @Mutation(() => Boolean, { name: 'deleteUser' })
-  async deleteUser(
-    @Args('input') input: DeleteUserInput,
-  ): Promise<Boolean> {
-    return await this.usersService.deleteUser(input.userId);
-  }
+  // @UseGuards(GqlAuthGuard, PermissionsGuard)
+  // @Permissions(Permission.USER_DELETE)
+  // @Mutation(() => Boolean, { name: 'deleteUser' })
+  // async deleteUser(
+  //   @Args('input') input: DeleteUserInput,
+  // ): Promise<Boolean> {
+  //   return await this.usersService.deleteUser(input.userId);
+  // }
 }

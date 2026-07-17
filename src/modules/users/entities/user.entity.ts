@@ -1,27 +1,35 @@
-import { Field, ID, ObjectType } from '@nestjs/graphql';
-import { UserRole } from '../enums/user-role.enum';
+import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
+import { UserRole } from '../../../generated/prisma/enums';
 import { Permission } from '../../auth/enums/permissions.enum';
+
+registerEnumType(UserRole, {
+    name: 'UserRole'
+});
+
+registerEnumType(Permission, {
+    name: 'Permissson'
+})
 
 @ObjectType()
 export class UserEntity {
-    @Field(() => ID)
-    id!: string;
+  @Field(() => ID)
+  id!: string;
 
-    @Field({ nullable: true })
-    firstName?: string;
+  @Field(() => String, { nullable: true })
+  firstName?: string | null;
 
-    @Field() 
-    email!: string;
+  @Field()
+  email!: string;
 
-    @Field()
-    createdAt!: Date;
+  @Field()
+  createdAt!: Date;
 
-    @Field()
-    updatedAt!: Date; 
+  @Field()
+  updatedAt!: Date;
 
-    @Field(() => UserRole)
-    role!: UserRole;
+  @Field(() => UserRole)
+  role!: UserRole;
 
-    @Field(() => [Permission] , { nullable: true })
-    permissions?: Permission[];
+  @Field(() => [Permission], { nullable: true })
+  permissions?: Permission[] | null;
 }

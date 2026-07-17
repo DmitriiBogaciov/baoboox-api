@@ -10,6 +10,7 @@ import { PasswordService } from './password.service';
 import { JwtStrategy } from './jwt.strategy';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { Auth_Session, AuthSessionSchema } from './schemas/auth-session.schema';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Module({
   imports: [
@@ -30,7 +31,15 @@ import { Auth_Session, AuthSessionSchema } from './schemas/auth-session.schema';
       }),
     }),
   ],
-  providers: [AuthResolver, AuthService, PasswordService, JwtStrategy, UsersService],
+  providers: [
+    AuthResolver, 
+    AuthService, 
+    PasswordService, 
+    JwtStrategy, 
+    UsersService,
+    PrismaService
+  ],
+
   exports: [AuthService],
 })
 export class AuthModule {}

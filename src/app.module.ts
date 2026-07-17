@@ -14,6 +14,7 @@ import * as Joi from 'joi';
 import { ErrorsModule } from './common/errors/errors.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ProjectModule } from './modules/project/project.module';
+import { PrismaModule } from './modules/prisma/prisma.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -24,6 +25,7 @@ import { ProjectModule } from './modules/project/project.module';
         NODE_ENV: Joi.string()
           .valid('development', 'production', 'test')
           .default('development'),
+        DATABASE_URL: Joi.string().required(),
         MONGODB_URI: Joi.string().required(),
         REDIS_HOST: Joi.string().default('localhost'),
         REDIS_PORT: Joi.number().default(6379),
@@ -72,6 +74,7 @@ import { ProjectModule } from './modules/project/project.module';
     ErrorsModule,
     AuthModule,
     ProjectModule,
+    PrismaModule,
   ],
   controllers: [AppController],
   providers: [AppService],
