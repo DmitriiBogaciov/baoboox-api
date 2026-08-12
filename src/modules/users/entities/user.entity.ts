@@ -30,6 +30,9 @@ export class UserEntity {
   @Field(() => UserRole)
   role!: UserRole;
 
+  @Field(() => Boolean)
+  isActive!: boolean
+
   @Field(() => [Permission], { nullable: true })
   permissions?: Permission[] | null;
 }

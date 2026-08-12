@@ -1,0 +1,15 @@
+info:
+  name: Find by id
+  type: graphql
+  seq: 5
+
+graphql:
+  method: GET
+  url: "{{host-gql}}"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

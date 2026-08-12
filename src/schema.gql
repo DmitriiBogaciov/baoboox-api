@@ -8,6 +8,17 @@ type AuthResponseEntity {
   user: UserEntity!
 }
 
+type AuthSessionEntity {
+  createdAt: DateTime!
+  expiresAt: DateTime!
+  id: ID!
+  ip: String
+  isRevoked: Boolean!
+  lastUsedAt: DateTime
+  userAgent: String
+  userId: String!
+}
+
 input CreateProjectInput {
   description: String
   title: String
@@ -18,17 +29,33 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+input LoginInput {
+  email: String!
+  password: String!
+}
+
 type Mutation {
   createProject(input: CreateProjectInput!): ProjectEntity!
+  deleteExpiredSessions: Float!
   deleteProject(projectId: String!): ProjectEntity!
+  login(input: LoginInput!): AuthResponseEntity!
+  logout: Boolean!
+  logoutAll: Float!
   publishProject(projectId: String!): ProjectEntity!
+  refresh: AuthResponseEntity!
   register(input: RegisterInput!): AuthResponseEntity!
+  revokeSession(input: RevokeSessionInput!): Boolean!
   updateProject(input: UpdateProjectInput!): ProjectEntity!
 }
 
 type PaginatedProjectsResponse {
   items: [ProjectEntity!]!
   meta: PaginationMeta!
+}
+
+input PaginationInput {
+  limit: Int! = 20
+  page: Int! = 1
 }
 
 type PaginationMeta {
@@ -40,7 +67,7 @@ type PaginationMeta {
   totalPages: Int!
 }
 
-enum Permissson {
+enum Permission {
   ADMIN_ACCESS
   BOOKMARK_CREATE
   COMMENT_CREATE
@@ -85,14 +112,27 @@ enum ProjectStatus {
 type Query {
   getAllProjects: String!
   getPublicProjects(authorId: String, limit: Int = 12, page: Int = 1, search: String, sortBy: ProjectSortBy = PUBLISHED_AT, sortOrder: SortOrder = DESC): PaginatedProjectsResponse!
+  getUserById(id: String!): UserEntity!
   getUserProjects: [ProjectEntity!]!
+  getUsers(input: UserQueryInput): UsersResponse!
   health: String!
+  me: UserEntity!
+  mySessions: [AuthSessionEntity!]!
 }
 
 input RegisterInput {
   email: String!
   firstName: String
   password: String!
+}
+
+input RevokeSessionInput {
+  sessionId: String!
+}
+
+enum SortDirection {
+  ASC
+  DESC
 }
 
 enum SortOrder {
@@ -115,9 +155,22 @@ type UserEntity {
   email: String!
   firstName: String
   id: ID!
-  permissions: [Permissson!]
+  isActive: Boolean!
+  permissions: [Permission!]
   role: UserRole!
   updatedAt: DateTime!
+}
+
+input UserFilterInput {
+  isActive: Boolean
+  role: UserRole
+  search: String
+}
+
+input UserQueryInput {
+  filter: UserFilterInput
+  pagination: PaginationInput
+  sort: UserSortInput
 }
 
 enum UserRole {
@@ -125,4 +178,27 @@ enum UserRole {
   AUTHOR
   MODERATOR
   READER
+}
+
+enum UserSortField {
+  CREATED_AT
+  EMAIL
+  FIRST_NAME
+  LAST_NAME
+  USERNAME
+}
+
+input UserSortInput {
+  direction: SortDirection! = DESC
+  field: UserSortField! = CREATED_AT
+}
+
+type UsersResponse {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  items: [UserEntity!]!
+  limit: Int!
+  page: Int!
+  total: Int!
+  totalPages: Int!
 }

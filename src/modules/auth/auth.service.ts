@@ -21,6 +21,7 @@ import {
     Auth_Session,
     AuthSessionDocument,
 } from './schemas/auth-session.schema';
+import { Prisma } from 'src/generated/prisma/client';
 
 type AccessPayload = {
     sub: string;
@@ -53,30 +54,6 @@ export class AuthService {
         private readonly prismaService: PrismaService,
     ) { }
 
-    // async register(
-    //     input: RegisterInput,
-    //     meta?: SessionMeta,
-    // ): Promise<AuthResponseEntity> {
-    //     const email = input.email.toLowerCase().trim();
-
-    //     const existingUser = await this.userModel.findOne({ email }).exec();
-
-    //     if (existingUser) {
-    //         throw new ConflictAppError('Email already in use');
-    //     }
-
-    //     const passwordHash = await this.passwordService.hash(input.password);
-
-    //     const user = await this.userModel.create({
-    //         firstName: input.firstName?.trim(),
-    //         email,
-    //         passwordHash,
-    //         role: UserRole.READER,
-    //     });
-
-    //     return this.issueTokens(user, meta);
-    // }
-
     async register(
         input: RegisterInput,
         meta?: SessionMeta,
@@ -106,202 +83,204 @@ export class AuthService {
 
 
 
-    // async login(
-    //     input: LoginInput,
-    //     meta?: SessionMeta,
-    // ): Promise<AuthResponseEntity> {
-    //     const email = input.email.toLowerCase().trim();
+    async login(
+        input: LoginInput,
+        meta?: SessionMeta,
+    ): Promise<AuthResponseEntity> {
+        const email = input.email.toLowerCase().trim();
 
-    //     const user = await this.userModel
-    //         .findOne({ email })
-    //         .select('+passwordHash')
-    //         .exec();
+        const user = await this.prismaService.user.findUnique({
+            where: {
+                email
+            }
+        })
 
-    //     if (!user || !user.passwordHash) {
-    //         throw new UnauthorizedAppError('Invalid email or password');
-    //     }
+        if (!user || !user.password) {
+            throw new UnauthorizedAppError('Invalid email or password');
+        }
 
-    //     const isPasswordValid = await this.passwordService.compare(
-    //         input.password,
-    //         user.passwordHash,
-    //     );
+        const isPasswordValid = await this.passwordService.compare(
+            input.password,
+            user.password,
+        );
 
-    //     if (!isPasswordValid) {
-    //         throw new UnauthorizedAppError('Invalid email or password');
-    //     }
+        if (!isPasswordValid) {
+            throw new UnauthorizedAppError('Invalid email or password');
+        }
 
-    //     return this.issueTokens1(user, meta);
-    // }
+        return this.issueTokens(user, meta);
+    }
 
-    // async refresh(
-    //     refreshToken: string,
-    //     meta?: SessionMeta,
-    // ): Promise<AuthResponseEntity> {
-    //     const payload = await this.verifyRefreshToken(refreshToken);
+    async refresh(
+        refreshToken: string,
+        meta?: SessionMeta,
+    ): Promise<AuthResponseEntity> {
+        const payload = await this.verifyRefreshToken(refreshToken);
 
-    //     const session = await this.authSessionModel
-    //         .findById(payload.sessionId)
-    //         .select('+refreshTokenHash')
-    //         .exec();
+        return this.prismaService.$transaction(async (tx) => {
+            const session = await tx.authSession.findUnique({
+                where: {
+                    id: payload.sessionId,
+                },
+            });
 
-    //     if (!session || session.isRevoked || session.expiresAt <= new Date()) {
-    //         throw new UnauthorizedAppError('Refresh session is invalid');
-    //     }
+            if (
+                !session ||
+                session.isRevoked ||
+                session.expiresAt.getTime() <= Date.now()
+            ) {
+                throw new UnauthorizedAppError('Refresh session is invalid');
+            }
 
-    //     const isValid = await this.passwordService.compare(
-    //         refreshToken,
-    //         session.refreshTokenHash,
-    //     );
+            const isValid = await this.passwordService.compare(
+                refreshToken,
+                session.refreshTokenHash,
+            );
 
-    //     if (!isValid) {
-    //         session.isRevoked = true;
-    //         await session.save();
-            
-    //         throw new UnauthorizedAppError('Refresh token reuse detected');
-    //     }
+            if (!isValid) {
+                await tx.authSession.update({
+                    where: {
+                        id: session.id,
+                    },
+                    data: {
+                        isRevoked: true,
+                    },
+                });
 
-    //     session.isRevoked = true;
-    //     await session.save();
+                throw new UnauthorizedAppError('Refresh token reuse detected');
+            }
 
-    //     const user = await this.userModel.findById(payload.sub).exec();
+            const user = await tx.user.findUnique({
+                where: {
+                    id: session.userId,
+                },
+            });
 
-    //     if (!user) {
-    //         throw new UnauthorizedAppError('User not found');
-    //     }
+            if (!user || !user.isActive) {
+                await tx.authSession.update({
+                    where: {
+                        id: session.id,
+                    },
+                    data: {
+                        isRevoked: true,
+                    },
+                });
 
-    //     return this.issueTokens1(user, {
-    //         ip: meta?.ip ?? session.ip ?? undefined,
-    //         userAgent: meta?.userAgent ?? session.userAgent ?? undefined,
-    //     });
-    // }
+                throw new UnauthorizedAppError('User not found');
+            }
 
-    // async logout(refreshToken: string): Promise<boolean> {
-    //     try {
-    //         const payload = await this.verifyRefreshToken(refreshToken);
+            await tx.authSession.update({
+                where: {
+                    id: session.id,
+                },
+                data: {
+                    isRevoked: true,
+                    lastUsedAt: new Date(),
+                },
+            });
 
-    //         const session = await this.authSessionModel
-    //             .findById(payload.sessionId)
-    //             .exec();
+            return this.issueTokens(
+                user,
+                {
+                    ip: meta?.ip ?? session.ip ?? undefined,
+                    userAgent: meta?.userAgent ?? session.userAgent ?? undefined,
+                },
+                tx
+            );
+        });
+    }
 
-    //         if (!session) {
-    //             return true;
-    //         }
+    async logout(refreshToken: string): Promise<boolean> {
+        try {
+            const payload = await this.verifyRefreshToken(refreshToken);
 
-    //         session.isRevoked = true;
-    //         await session.save();
+            return this.prismaService.$transaction(async (tx) => {
+                const session = await tx.authSession.findUnique({
+                    where: {
+                        id: payload.sessionId,
+                    }
+                })
 
-    //         return true;
-    //     } catch {
-    //         return true;
-    //     }
-    // }
+                if (
+                    !session ||
+                    session.isRevoked ||
+                    session.expiresAt.getTime() <= Date.now()
+                ) {
+                    return true;
+                }
 
-    // async logoutAll(userId: string): Promise<boolean> {
-    //     await this.authSessionModel.updateMany(
-    //         {
-    //             userId: new Types.ObjectId(userId),
-    //             isRevoked: false,
-    //         },
-    //         {
-    //             $set: {
-    //                 isRevoked: true,
-    //             },
-    //         },
-    //     );
+                await tx.authSession.update({
+                    where: { id: session.id },
+                    data: { isRevoked: true },
+                });
 
-    //     return true;
-    // }
+                return true;
+            })
+        } catch {
+            return true;
+        }
+    }
 
-    // async getMySessions(userId: string): Promise<AuthSessionEntity[]> {
-    //     const sessions = await this.authSessionModel
-    //         .find({ userId: new Types.ObjectId(userId) })
-    //         .sort({ createdAt: -1 })
-    //         .exec();
+    async logoutAll(userId: string): Promise<number> {
+        const result = await this.prismaService.authSession.updateMany({
+            where: {
+                userId,
+                isRevoked: false
+            },
+            data: {
+                isRevoked: true,
+            }
+        })
 
-    //     return sessions.map((session) => this.toAuthSessionEntity(session));
-    // }
+        return result.count;
+    }
 
-    // async revokeSession(userId: string, sessionId: string): Promise<boolean> {
-    //     const session = await this.authSessionModel.findOne({
-    //         _id: new Types.ObjectId(sessionId),
-    //         userId: new Types.ObjectId(userId),
-    //     });
+    async getMySessions(userId: string): Promise<AuthSessionEntity[]> {
+        const sessions = await this.prismaService.authSession.findMany({
+            where: {
+                userId,
+                isRevoked: false
+            },
+        })
 
-    //     if (!session) {
-    //         throw new NotFoundAppError('Session not found');
-    //     }
+        return sessions.map((session) => this.toAuthSessionEntity(session));
+    }
 
-    //     if (session.isRevoked) {
-    //         return true;
-    //     }
+    async revokeSession(userId: string, id: string): Promise<boolean> {
+        const session = await this.prismaService.authSession.update({
+            where: {
+                id,
+                userId
+            },
+            data: {
+                isRevoked: true
+            }
+        })
 
-    //     session.isRevoked = true;
-    //     await session.save();
+        if (!session) {
+            throw new NotFoundAppError('Session not found');
+        }
 
-    //     return true;
-    // }
+        if (session.isRevoked) {
+            return true;
+        }
 
-    // private async issueTokens1(
-    //     user: UserEntity,
-    //     meta?: SessionMeta,
-    // ): Promise<AuthResponseEntity> {
-    //     const session = new this.authSessionModel({
-    //         userId: user._id,
-    //         refreshTokenHash: 'temp',
-    //         isRevoked: false,
-    //         expiresAt: this.getRefreshTokenExpiryDate(),
-    //         lastUsedAt: new Date(),
-    //         userAgent: meta?.userAgent ?? null,
-    //         ip: meta?.ip ?? null,
-    //     });
+        return true;
+    }
 
-    //     await session.save();
-
-    //     const permissions = getPermissionsByRole(user.role);
-
-    //     const accessToken = await this.jwtService.signAsync<AccessPayload>(
-    //         {
-    //             sub: user._id.toString(),
-    //             email: user.email,
-    //             role: user.role,
-    //             permissions: permissions,
-    //         },
-    //         {
-    //             secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
-    //             expiresIn: (
-    //                 this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') ?? '15m'
-    //             ) as StringValue,
-    //         },
-    //     );
-
-    //     const refreshToken = await this.jwtService.signAsync<RefreshPayload>(
-    //         {
-    //             sub: user._id.toString(),
-    //             sessionId: session._id.toString(),
-    //             type: 'refresh',
-    //         },
-    //         {
-    //             secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
-    //             expiresIn: (
-    //                 this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ?? '7d'
-    //             ) as StringValue,
-    //         },
-    //     );
-
-    //     session.refreshTokenHash = await this.passwordService.hash(refreshToken);
-    //     session.lastUsedAt = new Date();
-    //     await session.save();
-
-    //     return {
-    //         accessToken,
-    //         refreshToken,
-    //         user: this.toUserEntityyy(user),
-    //     };
-    // }
+    async deleteExpiredSessions(): Promise<number>{
+        const result = await this.prismaService.authSession.deleteMany({
+            where: {
+                isRevoked: true,
+            }
+        })
+        return result.count;
+    }
 
     private async issueTokens(
         user: UserEntity,
         meta?: SessionMeta,
+        prisma: PrismaService | Prisma.TransactionClient = this.prismaService,
     ): Promise<AuthResponseEntity> {
 
         const sessionId = createId();
@@ -337,9 +316,9 @@ export class AuthService {
             },
         );
 
-        const refreshTokenHash  = await this.passwordService.hash(refreshToken);
+        const refreshTokenHash = await this.passwordService.hash(refreshToken);
 
-        await this.prismaService.authSession.create({
+        await prisma.authSession.create({
             data: {
                 id: sessionId,
                 userId: user.id,
@@ -361,16 +340,13 @@ export class AuthService {
 
     private async verifyRefreshToken(token: string): Promise<RefreshPayload> {
         try {
-            console.log('Verifying refresh token:', token);
             const payload = await this.jwtService.verifyAsync<RefreshPayload>(token, {
                 secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
             });
 
             if (payload.type !== 'refresh') {
-                console.error('Invalid token type:', payload.type);
                 throw new UnauthorizedAppError('Invalid refresh token');
             }
-            console.log('Refresh token verified successfully:', payload);
             return payload;
         } catch (error) {
             console.error('Error verifying refresh token:', error);
@@ -399,6 +375,7 @@ export class AuthService {
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
             role: user.role,
+            isActive: user.isActive,
             // permissions: getPermissionsByRole(user.role),
         };
     }
@@ -407,12 +384,12 @@ export class AuthService {
         return {
             id: session.id,
             userId: session.userId,
-            userAgent: session.userAgent ?? undefined,
-            ip: session.ip ?? undefined,
+            userAgent: session.userAgent ?? null,
+            ip: session.ip ?? null,
             isRevoked: session.isRevoked ?? false,
             createdAt: (session as any).createdAt,
             expiresAt: session.expiresAt,
-            lastUsedAt: session.lastUsedAt ?? undefined,
+            lastUsedAt: session.lastUsedAt ?? null,
         };
     }
 }

@@ -1,12 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { UserRole } from '../enums/user-role.enum';
+import { UserRole } from 'src/generated/prisma/enums';
 import { Permission } from '../../auth/enums/permissions.enum';
 import { registerEnumType } from '@nestjs/graphql';
-
-registerEnumType(UserRole, {
-    name: 'UserRole',
-})
 
 registerEnumType(Permission, {
     name: 'Permission',

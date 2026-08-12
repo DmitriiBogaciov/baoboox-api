@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { beforeEach, describe, it } from 'node:test';
+// using Jest globals (no need to import test helpers)
 
 describe('AppController', () => {
   let appController: AppController;
@@ -20,3 +22,14 @@ describe('AppController', () => {
     });
   });
 });
+
+function expect(actual: string) {
+  return {
+    toBe(expected: string) {
+      if (actual !== expected) {
+        throw new Error(`Expected "${actual}" to be "${expected}".`);
+      }
+    },
+  };
+}
+

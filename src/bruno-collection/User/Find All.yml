@@ -8,18 +8,28 @@ graphql:
   url: "{{host-gql}}"
   body:
     query: |-
-      mutation {
-        createUser(
+      query {
+        getUsers(
           input: {
-            firstName: "Dmitrii"
-            email: "dmitrii@example.com"
+            sort: {
+              field: CREATED_AT
+              direction: DESC
+            }
           }
         ) {
-          id
-          firstName
-          email
-          createdAt
-          updatedAt
+          items {
+          	id
+          	email
+          	firstName
+            role
+            createdAt
+      		}
+          total
+          page
+          limit
+          totalPages
+          hasNextPage
+          hasPreviousPage
         }
       }
   auth: inherit

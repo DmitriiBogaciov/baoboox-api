@@ -1,5 +1,5 @@
 import {Field, InputType} from "@nestjs/graphql";
-import {UserRole} from "../enums/user-role.enum";
+import {UserRole} from "src/generated/prisma/enums";
 import { IsMongoId, IsNotEmpty } from "class-validator";
 
 @InputType()

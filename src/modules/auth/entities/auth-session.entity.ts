@@ -8,11 +8,11 @@ export class AuthSessionEntity {
   @Field()
   userId!: string;
 
-  @Field({ nullable: true })
-  userAgent?: string;
+  @Field(() => String, { nullable: true })
+  userAgent?: string | null;
 
-  @Field({ nullable: true })
-  ip?: string;
+  @Field(() => String, { nullable: true })
+  ip?: string | null;
 
   @Field()
   isRevoked!: boolean;
@@ -23,6 +23,6 @@ export class AuthSessionEntity {
   @Field()
   expiresAt!: Date;
 
-  @Field({ nullable: true })
-  lastUsedAt?: Date;
+  @Field(() => Date, { nullable: true })
+  lastUsedAt?: Date | null;
 }

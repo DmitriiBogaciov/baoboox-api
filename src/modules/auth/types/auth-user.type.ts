@@ -1,5 +1,5 @@
 import { Permission } from '../enums/permissions.enum';
-import { UserRole } from 'src/modules/users/enums/user-role.enum';
+import { UserRole } from 'src/generated/prisma/enums';
 
 export interface AuthUser {
   sub: string;

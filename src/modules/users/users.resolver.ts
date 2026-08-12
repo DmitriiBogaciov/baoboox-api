@@ -2,7 +2,7 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Types } from 'mongoose';
 import { UsersService } from './users.service';
 import { UserEntity } from './entities/user.entity';
-import { CreateUserInput, ChangeUserRoleInput, DeleteUserInput } from './dto';
+import { CreateUserInput, ChangeUserRoleInput, DeleteUserInput, UserQueryInput, UsersResponse } from './dto';
 import { UserDocument } from './schemas/user.schema';
 import { getPermissionsByRole } from '../auth/utils/get-permissions-by-role.util';
 import { UseGuards } from '@nestjs/common';
@@ -12,7 +12,7 @@ import { Permissions } from '../auth/decorators/permissions.decorator';
 import { Permission } from '../auth/enums/permissions.enum';
 
 @Resolver(() => UserEntity)
-export class UsersResolver {
+export default class UsersResolver {
   constructor(private readonly usersService: UsersService) { }
 
   private toEntity(user: UserEntity): UserEntity {
@@ -23,6 +23,7 @@ export class UsersResolver {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       role: user.role,
+      isActive: user.isActive
     };
   }
 
@@ -34,17 +35,18 @@ export class UsersResolver {
     return String(id);
   }
 
-  // @Query(() => [UserEntity], { name: 'users' })
-  // async findAll(): Promise<UserEntity[]> {
-  //   const users = await this.usersService.findAll();
-  //   return users.map((user) => this.toEntity(user));
-  // }
+  @Query(() => UsersResponse, { name: 'getUsers' })
+  async findAll(
+    @Args('input', { nullable: true }) input?: UserQueryInput,
+  ): Promise<UsersResponse> {
+    return await this.usersService.findAll(input);
+  }
 
-  // @Query(() => UserEntity, { name: 'user' })
-  // async findById(@Args('id') id: string): Promise<UserEntity> {
-  //   const user = await this.usersService.findById(id);
-  //   return this.toEntity(user);
-  // }
+  @Query(() => UserEntity, { name: 'getUserById' })
+  async findById(@Args('id') id: string): Promise<UserEntity> {
+    const user = await this.usersService.findById(id);
+    return this.toEntity(user);
+  }
 
   // @UseGuards(GqlAuthGuard, PermissionsGuard)
   // @Permissions(Permission.USER_ROLE_UPDATE)

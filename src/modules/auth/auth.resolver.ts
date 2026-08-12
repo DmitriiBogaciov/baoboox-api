@@ -11,6 +11,10 @@ import { AuthSessionEntity } from './entities/auth-session.entity';
 import { UserEntity } from '../users/entities/user.entity';
 import { GqlAuthGuard } from './gql-auth.guard';
 import { CurrentUser } from './current-user.decorator';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { Permissions } from '../auth/decorators/permissions.decorator';
+import { Permission } from '../auth/enums/permissions.enum';
+
 import {
   clearRefreshTokenCookie,
   setRefreshTokenCookie,
@@ -49,101 +53,109 @@ export class AuthResolver {
     };
   }
 
-  // @Mutation(() => AuthResponseEntity)
-  // async login(
-  //   @Args('input') input: LoginInput,
-  //   @Context('req') req: Request,
-  //   @Context('res') res: Response,
-  // ): Promise<AuthResponseEntity> {
-  //   const result = await this.authService.login(input, this.getSessionMeta(req));
+  @Mutation(() => AuthResponseEntity)
+  async login(
+    @Args('input') input: LoginInput,
+    @Context('req') req: Request,
+    @Context('res') res: Response,
+  ): Promise<AuthResponseEntity> {
+    const result = await this.authService.login(input, this.getSessionMeta(req));
 
-  //   const refreshToken = result.refreshToken;
+    const refreshToken = result.refreshToken;
 
-  //   if (!refreshToken) {
-  //     throw new UnauthorizedAppError('Refresh token not generated');
-  //   }
+    if (!refreshToken) {
+      throw new UnauthorizedAppError('Refresh token not generated');
+    }
 
-  //   setRefreshTokenCookie(res, refreshToken);
+    setRefreshTokenCookie(res, refreshToken);
 
-  //   return {
-  //     accessToken: result.accessToken,
-  //     user: result.user,
-  //   };
-  // }
+    return {
+      accessToken: result.accessToken,
+      user: result.user,
+    };
+  }
 
-  // @Mutation(() => AuthResponseEntity)
-  // async refresh(
-  //   @Context('req') req: Request,
-  //   @Context('res') res: Response
-  // ): Promise<AuthResponseEntity> {
-  //   const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
+  @Mutation(() => AuthResponseEntity)
+  async refresh(
+    @Context('req') req: Request,
+    @Context('res') res: Response
+  ): Promise<AuthResponseEntity> {
+    const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
 
-  //   if (!refreshToken) {
-  //     throw new UnauthorizedAppError('Refresh token not found');
-  //   }
+    if (!refreshToken) {
+      throw new UnauthorizedAppError('Refresh token not found');
+    }
 
-  //   const result: any = await this.authService.refresh(refreshToken, this.getSessionMeta(req));
+    const result: any = await this.authService.refresh(refreshToken, this.getSessionMeta(req));
 
-  //   const newRefreshToken = result.refreshToken;
+    const newRefreshToken = result.refreshToken;
 
-  //   if (!newRefreshToken) {
-  //     throw new UnauthorizedAppError('Refresh token not generated');
-  //   }
+    if (!newRefreshToken) {
+      throw new UnauthorizedAppError('Refresh token not generated');
+    }
 
-  //   setRefreshTokenCookie(res, newRefreshToken);
+    setRefreshTokenCookie(res, newRefreshToken);
 
-  //   return {
-  //     accessToken: result.accessToken,
-  //     user: result.user,
-  //   };
-  // }
+    return {
+      accessToken: result.accessToken,
+      user: result.user,
+    };
+  }
 
-  // @Mutation(() => Boolean)
-  // async logout(
-  //   @Context('req') req: Request,
-  //   @Context('res') res: Response,
-  // ): Promise<boolean> {
-  //   const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
+  @Mutation(() => Boolean)
+  async logout(
+    @Context('req') req: Request,
+    @Context('res') res: Response,
+  ): Promise<boolean> {
+    const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME];
 
-  //   if (refreshToken) {
-  //     await this.authService.logout(refreshToken);
-  //   }
+    if (refreshToken) {
+      await this.authService.logout(refreshToken);
+    }
 
-  //   clearRefreshTokenCookie(res);
+    clearRefreshTokenCookie(res);
 
-  //   return true;
-  // }
+    return true;
+  }
 
-  // @UseGuards(GqlAuthGuard)
-  // @Query(() => UserEntity)
-  // async me(@CurrentUser() user: UserEntity): Promise<UserEntity> {
-  //   return user;
-  // }
+  @UseGuards(GqlAuthGuard)
+  @Query(() => UserEntity)
+  async me(@CurrentUser() user: UserEntity): Promise<UserEntity> {
+    return user;
+  }
 
-  // @UseGuards(GqlAuthGuard)
-  // @Query(() => [AuthSessionEntity])
-  // async mySessions(@CurrentUser() user: UserEntity): Promise<AuthSessionEntity[]> {
-  //   return this.authService.getMySessions(user.id);
-  // }
+  @UseGuards(GqlAuthGuard)
+  @Query(() => [AuthSessionEntity])
+  async mySessions(@CurrentUser() user: UserEntity): Promise<AuthSessionEntity[]> {
+    return this.authService.getMySessions(user.id);
+  }
 
-  // @UseGuards(GqlAuthGuard)
-  // @Mutation(() => Boolean)
-  // async revokeSession(
-  //   @CurrentUser() user: UserEntity,
-  //   @Args('input') input: RevokeSessionInput,
-  // ): Promise<boolean> {
-  //   return this.authService.revokeSession(user.id, input.sessionId);
-  // }
+  @UseGuards(GqlAuthGuard)
+  @Mutation(() => Boolean)
+  async revokeSession(
+    @CurrentUser() user: UserEntity,
+    @Args('input') input: RevokeSessionInput,
+  ): Promise<boolean> {
+    return this.authService.revokeSession(user.id, input.sessionId);
+  }
 
-  // @UseGuards(GqlAuthGuard)
-  // @Mutation(() => Boolean)
-  // async logoutAll(
-  //   @CurrentUser() user: UserEntity,
-  //   @Context('req') req: Request,
-  //   @Context('res') res: Response,
-  // ): Promise<boolean> {
-  //   await this.authService.logoutAll(user.id);
-  //   clearRefreshTokenCookie(res);
-  //   return true;
-  // }
+  @UseGuards(GqlAuthGuard)
+  @Mutation(() => Number, { name: 'logoutAll'})
+  async logoutAll(
+    @CurrentUser() user: UserEntity,
+    @Context('req') req: Request,
+    @Context('res') res: Response,
+  ): Promise<number> {
+    const result = await this.authService.logoutAll(user.id);
+    clearRefreshTokenCookie(res);
+    return result;
+  }
+
+  @UseGuards(GqlAuthGuard, PermissionsGuard)
+  @Permissions(Permission.ADMIN_ACCESS)
+  @Mutation(() => Number, { name: 'deleteExpiredSessions'})
+  async deleteExpiredSessions (): Promise<number>{
+    const count = await this.authService.deleteExpiredSessions()
+    return count;
+  }
 }
