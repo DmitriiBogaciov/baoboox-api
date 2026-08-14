@@ -19,6 +19,7 @@ export enum Permission {
   CONTENT_HIDE = 'content:hide',
 
   USER_ROLE_UPDATE = 'user:role:update',
+  USER_UPDATE = 'user:update',
   USER_DELETE = 'user:delete',
   ADMIN_ACCESS = 'admin:access',
 }

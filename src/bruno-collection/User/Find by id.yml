@@ -4,8 +4,21 @@ info:
   seq: 5
 
 graphql:
-  method: GET
+  method: POST
   url: "{{host-gql}}"
+  body:
+    query: |-
+      query {
+        getUserById (
+          id: "cmsteypfm0000pjxqop5hkmhd"
+        ) {
+          id
+          email
+          firstName
+          role
+          createdAt
+        }
+      }
   auth: inherit
 
 settings:

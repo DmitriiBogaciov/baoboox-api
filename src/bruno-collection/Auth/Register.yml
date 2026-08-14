@@ -11,7 +11,7 @@ graphql:
       mutation {
         register(
           input: {
-            email: "dmitrii@gmail.com"
+            email: "dmitrii.bogaciov@gmail.com"
             password: "123498765"
           }
         ) {

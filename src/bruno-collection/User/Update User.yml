@@ -1,7 +1,7 @@
 info:
-  name: Change User Role
+  name: Update User
   type: graphql
-  seq: 3
+  seq: 6
 
 graphql:
   method: POST
@@ -9,20 +9,20 @@ graphql:
   body:
     query: |-
       mutation {
-        changeUserRole(
-          input: {
-            userId: "cmrqgtpcr0005lgxqx4fv58pe"
-            newRole: MODERATOR
+        updateUser(
+          id: "cmsteypfm0000pjxqop5hkmhd",
+          data: {
+            firstName: "Dmitrii"
+            lastName: "Bogaciov"
           }
-        ) {
+        ){
           id
           firstName
-          email
-          createdAt
-          updatedAt
+          lastName
           role
         }
       }
+  auth: inherit
 
 runtime:
   scripts:

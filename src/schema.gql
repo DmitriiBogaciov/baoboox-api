@@ -19,6 +19,11 @@ type AuthSessionEntity {
   userId: String!
 }
 
+input ChangeUserRoleInput {
+  newRole: UserRole!
+  userId: String!
+}
+
 input CreateProjectInput {
   description: String
   title: String
@@ -29,15 +34,21 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+input DeleteUserInput {
+  userId: String!
+}
+
 input LoginInput {
   email: String!
   password: String!
 }
 
 type Mutation {
+  changeUserRole(input: ChangeUserRoleInput!): UserEntity!
   createProject(input: CreateProjectInput!): ProjectEntity!
   deleteExpiredSessions: Float!
   deleteProject(projectId: String!): ProjectEntity!
+  deleteUser(input: DeleteUserInput!): Boolean!
   login(input: LoginInput!): AuthResponseEntity!
   logout: Boolean!
   logoutAll: Float!
@@ -46,6 +57,7 @@ type Mutation {
   register(input: RegisterInput!): AuthResponseEntity!
   revokeSession(input: RevokeSessionInput!): Boolean!
   updateProject(input: UpdateProjectInput!): ProjectEntity!
+  updateUser(data: UpdateUserInput!, id: String!): UserEntity!
 }
 
 type PaginatedProjectsResponse {
@@ -85,6 +97,7 @@ enum Permission {
   REPORT_REVIEW
   USER_DELETE
   USER_ROLE_UPDATE
+  USER_UPDATE
 }
 
 type ProjectEntity {
@@ -150,12 +163,20 @@ input UpdateProjectInput {
   id: String!
 }
 
+input UpdateUserInput {
+  avatarUrl: String
+  firstName: String
+  lastName: String
+  username: String
+}
+
 type UserEntity {
   createdAt: DateTime!
   email: String!
   firstName: String
   id: ID!
   isActive: Boolean!
+  lastName: String
   permissions: [Permission!]
   role: UserRole!
   updatedAt: DateTime!

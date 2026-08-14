@@ -21,6 +21,7 @@ const MODERATOR_PERMISSIONS: Permission[] = [
   Permission.REPORT_REVIEW,
   Permission.CONTENT_HIDE,
   Permission.PROJECT_PUBLISH,
+  Permission.USER_UPDATE,
 ];
 
 export const ROLE_PERMISSIONS_MAP: Record<UserRole, Permission[]> = {

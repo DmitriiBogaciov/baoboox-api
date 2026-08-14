@@ -9,20 +9,18 @@ graphql:
   body:
     query: |-
       mutation {
-        createUser(
+        deleteUser(
           input: {
-            firstName: "Dmitrii"
-            email: "dmitrii@example.com"
+            userId: "cmrphu8ur0000itxqf9zhowzt"
           }
-        ) {
-          id
-          firstName
-          email
-          createdAt
-          updatedAt
-        }
+        ) 
       }
   auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: req.setHeader('Authorization', `Bearer ${bru.getEnvVar('accessToken')}`)
 
 settings:
   encodeUrl: true

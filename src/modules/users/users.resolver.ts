@@ -2,7 +2,7 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Types } from 'mongoose';
 import { UsersService } from './users.service';
 import { UserEntity } from './entities/user.entity';
-import { CreateUserInput, ChangeUserRoleInput, DeleteUserInput, UserQueryInput, UsersResponse } from './dto';
+import { CreateUserInput, ChangeUserRoleInput, DeleteUserInput, UserQueryInput, UsersResponse, UpdateUserInput } from './dto';
 import { UserDocument } from './schemas/user.schema';
 import { getPermissionsByRole } from '../auth/utils/get-permissions-by-role.util';
 import { UseGuards } from '@nestjs/common';
@@ -19,6 +19,7 @@ export default class UsersResolver {
     return {
       id: this.toStringId(user.id),
       firstName: user.firstName,
+      lastName: user.lastName,
       email: user.email,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
@@ -48,22 +49,33 @@ export default class UsersResolver {
     return this.toEntity(user);
   }
 
-  // @UseGuards(GqlAuthGuard, PermissionsGuard)
-  // @Permissions(Permission.USER_ROLE_UPDATE)
-  // @Mutation(() => UserEntity, { name: 'changeUserRole' })
-  // async changeUserRole(
-  //   @Args('input') input: ChangeUserRoleInput,
-  // ): Promise<UserEntity> {
-  //   const user = await this.usersService.changeUserRole(input);
-  //   return this.toEntity(user);
-  // }
+  @UseGuards(GqlAuthGuard, PermissionsGuard)
+  @Permissions(Permission.USER_ROLE_UPDATE)
+  @Mutation(() => UserEntity, { name: 'changeUserRole' })
+  async changeUserRole(
+    @Args('input') input: ChangeUserRoleInput,
+  ): Promise<UserEntity> {
+    const user = await this.usersService.changeUserRole(input);
+    return this.toEntity(user);
+  }
 
-  // @UseGuards(GqlAuthGuard, PermissionsGuard)
-  // @Permissions(Permission.USER_DELETE)
-  // @Mutation(() => Boolean, { name: 'deleteUser' })
-  // async deleteUser(
-  //   @Args('input') input: DeleteUserInput,
-  // ): Promise<Boolean> {
-  //   return await this.usersService.deleteUser(input.userId);
-  // }
+  @UseGuards(GqlAuthGuard, PermissionsGuard)
+  @Permissions(Permission.USER_DELETE)
+  @Mutation(() => Boolean, { name: 'deleteUser' })
+  async deleteUser(
+    @Args('input') input: DeleteUserInput,
+  ): Promise<Boolean> {
+    return await this.usersService.deleteUser(input.userId);
+  }
+
+  @UseGuards(GqlAuthGuard, PermissionsGuard)
+  @Permissions(Permission.USER_UPDATE)
+  @Mutation(() => UserEntity, { name: 'updateUser' })
+  async updateUser(
+    @Args('id') id: string,
+    @Args('data') data: UpdateUserInput,
+  ): Promise<UserEntity> {
+    const user = await this.usersService.updateUser(id, data);
+    return this.toEntity(user);
+  }
 }
