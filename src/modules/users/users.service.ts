@@ -9,8 +9,6 @@ import {
 } from '../../common/errors';
 import { UserEntity } from './entities/user.entity';
 import { SortDirection, UserSortField } from './enums';
-import { UserSortFieldMap } from './enum-maps/user-sort-field.map';
-import { SortDirectionMap } from './enum-maps/sort-direction.map';
 
 @Injectable()
 export class UsersService {
@@ -18,7 +16,7 @@ export class UsersService {
         private readonly prismaService: PrismaService,
     ) { }
 
-    async findAll(query?: UserQueryInput): Promise<UsersResponse>  {
+    async find(query?: UserQueryInput): Promise<UsersResponse>  {
         const page = query?.pagination?.page ?? 1;
         const limit = query?.pagination?.limit ?? 20;
 
@@ -28,6 +26,12 @@ export class UsersService {
 
         if (query?.filter?.search) {
             where.OR = [
+                {
+                    id: {
+                        contains: query.filter.search,
+                        mode: 'insensitive'
+                    }
+                },
                 {
                     email: {
                         contains: query.filter.search,
@@ -63,9 +67,9 @@ export class UsersService {
             where.isActive = query.filter.isActive
         }
 
-        const sortField = UserSortFieldMap[query?.sort?.field ?? UserSortField.CREATED_AT];
+        const sortField = query?.sort?.field ?? UserSortField.CREATED_AT;
 
-        const sortDirection = SortDirectionMap[query?.sort?.direction ?? SortDirection.DESC];
+        const sortDirection = query?.sort?.direction ?? SortDirection.DESC;
 
         const [users, total] = await this.prismaService.$transaction([
             this.prismaService.user.findMany({

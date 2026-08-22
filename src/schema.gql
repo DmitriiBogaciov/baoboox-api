@@ -25,8 +25,12 @@ input ChangeUserRoleInput {
 }
 
 input CreateProjectInput {
+  coverUrl: String
   description: String
-  title: String
+  language: String
+  name: String!
+  type: ProjectType
+  visibility: ProjectVisibility
 }
 
 """
@@ -47,36 +51,19 @@ type Mutation {
   changeUserRole(input: ChangeUserRoleInput!): UserEntity!
   createProject(input: CreateProjectInput!): ProjectEntity!
   deleteExpiredSessions: Float!
-  deleteProject(projectId: String!): ProjectEntity!
   deleteUser(input: DeleteUserInput!): Boolean!
   login(input: LoginInput!): AuthResponseEntity!
   logout: Boolean!
   logoutAll: Float!
-  publishProject(projectId: String!): ProjectEntity!
   refresh: AuthResponseEntity!
   register(input: RegisterInput!): AuthResponseEntity!
   revokeSession(input: RevokeSessionInput!): Boolean!
-  updateProject(input: UpdateProjectInput!): ProjectEntity!
   updateUser(data: UpdateUserInput!, id: String!): UserEntity!
-}
-
-type PaginatedProjectsResponse {
-  items: [ProjectEntity!]!
-  meta: PaginationMeta!
 }
 
 input PaginationInput {
   limit: Int! = 20
   page: Int! = 1
-}
-
-type PaginationMeta {
-  hasNextPage: Boolean!
-  hasPrevPage: Boolean!
-  limit: Int!
-  page: Int!
-  total: Int!
-  totalPages: Int!
 }
 
 enum Permission {
@@ -101,32 +88,94 @@ enum Permission {
 }
 
 type ProjectEntity {
-  authorId: ID!
+  archivedAt: DateTime
+  coverUrl: String
   createdAt: DateTime!
   description: String
   id: ID!
+  language: ProjectLanguage
+  name: String!
+  ownerId: ID!
+  publishedAt: DateTime
+  slug: String
   status: ProjectStatus!
-  title: String!
+  type: ProjectType!
   updatedAt: DateTime!
+  visibility: ProjectVisibility!
 }
 
-enum ProjectSortBy {
+input ProjectFilterInput {
+  language: ProjectLanguage
+  search: String
+  status: ProjectStatus
+  type: ProjectType
+  visibility: ProjectVisibility
+}
+
+enum ProjectLanguage {
+  DE
+  EN
+  ES
+  FR
+  IT
+  PT
+  RU
+  ZH
+}
+
+input ProjectQueryInput {
+  filter: ProjectFilterInput
+  pagination: PaginationInput
+  sort: ProjectSortInput
+}
+
+type ProjectQueryOutput {
+  hasNextPage: Boolean!
+  hasPrevPage: Boolean!
+  items: [ProjectEntity!]!
+  limit: Int!
+  page: Int!
+  total: Int!
+  totalPages: Int!
+}
+
+enum ProjectSortField {
   CREATED_AT
+  NAME
   PUBLISHED_AT
-  TITLE
+  UPDATED_AT
 }
 
-"""The status of the project"""
+input ProjectSortInput {
+  direction: SortDirection! = DESC
+  field: ProjectSortField! = CREATED_AT
+}
+
 enum ProjectStatus {
+  ARCHIVED
+  BLOCKED
   DRAFT
+  IN_REVIEW
   PUBLISHED
 }
 
+enum ProjectType {
+  COURSE
+  GUIDE
+  HANDBOOK
+  INSTRUCTION
+  LECTURE
+}
+
+enum ProjectVisibility {
+  PRIVATE
+  PUBLIC
+  UNLISTED
+}
+
 type Query {
-  getAllProjects: String!
-  getPublicProjects(authorId: String, limit: Int = 12, page: Int = 1, search: String, sortBy: ProjectSortBy = PUBLISHED_AT, sortOrder: SortOrder = DESC): PaginatedProjectsResponse!
+  getProjects(input: ProjectQueryInput): ProjectQueryOutput!
   getUserById(id: String!): UserEntity!
-  getUserProjects: [ProjectEntity!]!
   getUsers(input: UserQueryInput): UsersResponse!
   health: String!
   me: UserEntity!
@@ -146,21 +195,6 @@ input RevokeSessionInput {
 enum SortDirection {
   ASC
   DESC
-}
-
-enum SortOrder {
-  ASC
-  DESC
-}
-
-input UpdateProjectDataInput {
-  description: String
-  title: String
-}
-
-input UpdateProjectInput {
-  data: UpdateProjectDataInput!
-  id: String!
 }
 
 input UpdateUserInput {

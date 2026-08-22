@@ -1,13 +1,10 @@
 import { Field, InputType, registerEnumType } from "@nestjs/graphql";
 import { IsEnum } from "class-validator";
-import { UserSortField, SortDirection } from '../enums'
+import { UserSortField } from '../enums';
+import { SortDirection } from "src/common/utils/sort-direction.enum";
 
 registerEnumType(UserSortField, {
   name: 'UserSortField'
-})
-
-registerEnumType(SortDirection, {
-  name: 'SortDirection'
 })
 
 @InputType()

@@ -37,10 +37,10 @@ export default class UsersResolver {
   }
 
   @Query(() => UsersResponse, { name: 'getUsers' })
-  async findAll(
+  async find(
     @Args('input', { nullable: true }) input?: UserQueryInput,
   ): Promise<UsersResponse> {
-    return await this.usersService.findAll(input);
+    return await this.usersService.find(input);
   }
 
   @Query(() => UserEntity, { name: 'getUserById' })

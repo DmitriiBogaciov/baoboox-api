@@ -1,5 +1,5 @@
 info:
-  name: Get Public Projects
+  name: Get Projects
   type: graphql
   seq: 4
 

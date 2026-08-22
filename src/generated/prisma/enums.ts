@@ -17,3 +17,48 @@ export const UserRole = {
 } as const
 
 export type UserRole = (typeof UserRole)[keyof typeof UserRole]
+
+
+export const ProjectStatus = {
+  DRAFT: 'DRAFT',
+  IN_REVIEW: 'IN_REVIEW',
+  PUBLISHED: 'PUBLISHED',
+  ARCHIVED: 'ARCHIVED',
+  BLOCKED: 'BLOCKED'
+} as const
+
+export type ProjectStatus = (typeof ProjectStatus)[keyof typeof ProjectStatus]
+
+
+export const ProjectVisibility = {
+  PUBLIC: 'PUBLIC',
+  UNLISTED: 'UNLISTED',
+  PRIVATE: 'PRIVATE'
+} as const
+
+export type ProjectVisibility = (typeof ProjectVisibility)[keyof typeof ProjectVisibility]
+
+
+export const ProjectType = {
+  HANDBOOK: 'HANDBOOK',
+  GUIDE: 'GUIDE',
+  COURSE: 'COURSE',
+  INSTRUCTION: 'INSTRUCTION',
+  LECTURE: 'LECTURE'
+} as const
+
+export type ProjectType = (typeof ProjectType)[keyof typeof ProjectType]
+
+
+export const ProjectLanguage = {
+  EN: 'EN',
+  ES: 'ES',
+  FR: 'FR',
+  DE: 'DE',
+  IT: 'IT',
+  PT: 'PT',
+  RU: 'RU',
+  ZH: 'ZH'
+} as const
+
+export type ProjectLanguage = (typeof ProjectLanguage)[keyof typeof ProjectLanguage]

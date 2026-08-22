@@ -22,6 +22,13 @@ graphql:
       }
   auth: inherit
 
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const accessToken = res.getBody().data.refresh.accessToken;
+        bru.setEnvVar("accessToken", accessToken);
+
 settings:
   encodeUrl: true
   timeout: 0

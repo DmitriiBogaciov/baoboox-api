@@ -27,3 +27,8 @@ export type User = Prisma.UserModel
  * 
  */
 export type AuthSession = Prisma.AuthSessionModel
+/**
+ * Model Project
+ * 
+ */
+export type Project = Prisma.ProjectModel

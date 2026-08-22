@@ -1,10 +1,33 @@
-import { Field, ID, ObjectType, registerEnumType } from '@nestjs/graphql';
-import { ProjectStatus } from '../enums/project-status.enum';
+import {
+    Field,
+    GraphQLISODateTime,
+    ID,
+    ObjectType,
+    registerEnumType,
+} from '@nestjs/graphql';
+
+import {
+    ProjectStatus,
+    ProjectType,
+    ProjectVisibility,
+    ProjectLanguage
+} from 'src/generated/prisma/enums';
 
 registerEnumType(ProjectStatus, {
     name: 'ProjectStatus',
-    description: 'The status of the project',
 });
+
+registerEnumType(ProjectType, {
+    name: 'ProjectType',
+});
+
+registerEnumType(ProjectVisibility, {
+    name: 'ProjectVisibility',
+});
+
+registerEnumType(ProjectLanguage, {
+    name: 'ProjectLanguage'
+})
 
 @ObjectType()
 export class ProjectEntity {
@@ -12,20 +35,41 @@ export class ProjectEntity {
     id!: string;
 
     @Field()
-    title!: string;
+    name!: string;
 
-    @Field({ nullable: true })
-    description?: string;
+    @Field(() => String, { nullable: true, defaultValue: null })
+    description!: string | null;
 
-    @Field(() => ID)
-    authorId!: string;
+    @Field(() => String, { nullable: true, defaultValue: null })
+    coverUrl!: string | null;
+
+    @Field(() => String, { nullable: true })
+    slug!: string;
+
+    @Field(() => ProjectType)
+    type!: ProjectType;
 
     @Field(() => ProjectStatus)
     status!: ProjectStatus;
 
-    @Field()
+    @Field(() => ProjectVisibility)
+    visibility!: ProjectVisibility;
+
+    @Field(() => ProjectLanguage, { nullable: true, defaultValue: ProjectLanguage.EN })
+    language!: ProjectLanguage;
+
+    @Field(() => ID)
+    ownerId!: string;
+
+    @Field(() => GraphQLISODateTime, { nullable: true })
+    publishedAt!: Date | null;
+
+    @Field(() => GraphQLISODateTime, { nullable: true })
+    archivedAt!: Date | null;
+
+    @Field(() => GraphQLISODateTime)
     createdAt!: Date;
 
-    @Field()
+    @Field(() => GraphQLISODateTime)
     updatedAt!: Date;
 }

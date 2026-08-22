@@ -5,8 +5,32 @@ info:
 
 graphql:
   method: POST
-  url: ""
+  url: "{{host-gql}}"
+  body:
+    query: |-
+      mutation ($input: CreateProjectInput!) {
+        createProject(input: $input) {
+          name
+          ownerId
+          description
+          slug
+          type
+          visibility
+        }
+      }
+    variables: |-
+      {
+        "input": {
+          "name": "First project",
+          "description": "Fourth slug try"
+        }
+      }
   auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: req.setHeader("Authorization", `Bearer ${bru.getEnvVar("accessToken")}`)
 
 settings:
   encodeUrl: true

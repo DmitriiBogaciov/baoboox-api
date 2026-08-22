@@ -15,6 +15,39 @@ enum UserRole {
   MODERATOR
 }
 
+enum ProjectStatus {
+  DRAFT
+  IN_REVIEW
+  PUBLISHED
+  ARCHIVED
+  BLOCKED
+}
+
+enum ProjectVisibility {
+  PUBLIC
+  UNLISTED
+  PRIVATE
+}
+
+enum ProjectType {
+  HANDBOOK
+  GUIDE
+  COURSE
+  INSTRUCTION
+  LECTURE
+}
+
+enum ProjectLanguage {
+  EN
+  ES
+  FR
+  DE
+  IT
+  PT
+  RU
+  ZH
+}
+
 model User {
   id        String        @id @default(cuid())
   email     String        @unique @db.VarChar(255)
@@ -26,6 +59,7 @@ model User {
   role      UserRole      @default(READER)
   isActive  Boolean       @default(true)
   sessions  AuthSession[]
+  projects  Project[]
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
@@ -53,4 +87,31 @@ model AuthSession {
   @@index([expiresAt])
   @@index([userId, isRevoked])
   @@map("auth_sessions")
+}
+
+model Project {
+  id          String  @id @default(cuid())
+  name        String  @db.VarChar(255)
+  slug        String  @unique @db.VarChar(255)
+  description String? @db.Text
+  coverUrl    String? @db.VarChar(500)
+
+  type        ProjectType       @default(GUIDE)
+  status      ProjectStatus     @default(DRAFT)
+  visibility  ProjectVisibility @default(PRIVATE)
+
+  language    ProjectLanguage   @default(EN)
+  ownerId     String
+
+  publishedAt  DateTime?
+  archivedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+
+  @@index([ownerId])
+  @@index([status, visibility])
+  @@index([type])
+  @@map("projects")
 }
