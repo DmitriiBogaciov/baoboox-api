@@ -8,36 +8,43 @@ graphql:
   url: "{{host-gql}}"
   body:
     query: |-
-      query {
-        getPublicProjects(
-          page: 1
-          limit: 12
-          # search: "test"
-          # sortBy: PUBLISHED_AT
-          sortOrder: DESC
-        ) {
-          items {
+      query($input: ProjectQueryInput!){
+        getProjects(input: $input) {
+          items{
             id
-            title
-            description
-            status
+            name
+          	ownerId
+          	description
+          	slug
+         	 	type
+            visibility
           }
-          meta {
-            page
-            limit
-            total
-            totalPages
-            hasNextPage
-            hasPrevPage
-          }
+          page
+          limit
+          total
+          totalPages
+          hasNextPage
+          hasPrevPage
+        }
+      }
+    variables: |-
+      {
+        "input": {
+          
         }
       }
   auth:
     type: bearer
     token: ""
 
+runtime:
+  scripts:
+    - type: before-request
+      code: req.setHeader('Authorization', `Bearer ${bru.getEnvVar('accessToken')}`)
+
 settings:
   encodeUrl: true
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+  forwardAuthorizationHeader: true

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CreateProjectInput, ProjectQueryInput, ProjectQueryOutput, UpdateProjectDataInput } from './dto';
+import { CreateProjectInput, ProjectQueryInput, ProjectQueryOutput, UpdateOwnedProjectInput } from './dto';
 import { createSlug } from '../../common/utils/create-slug.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProjectEntity } from './entities/project.entity';
@@ -11,7 +11,7 @@ import {
     NotFoundAppError,
     ServiceUnavailableAppError,
 } from '../../common/errors';
-import { Prisma, Project } from 'src/generated/prisma/client';
+import { Prisma, Project, ProjectStatus } from 'src/generated/prisma/client';
 
 const MAX_SLUG_ATTEMPTS = 100;
 const MAX_SLUG_LENGTH = 255;
@@ -62,31 +62,6 @@ export class ProjectService {
 
         throw new ConflictAppError(
             'Cannot generate unique slug for project after multiple attempts',
-        );
-    }
-
-    private getSlugCandidate(
-        baseSlug: string,
-        attempt: number,
-    ): string {
-        if (attempt === 1) {
-            return baseSlug;
-        }
-
-        const suffix = `-${attempt}`;
-
-        return `${baseSlug.slice(
-            0,
-            MAX_SLUG_LENGTH - suffix.length,
-        )}${suffix}`;
-    }
-
-    private isSlugConflict(error: unknown): boolean {
-        return (
-            typeof error === 'object' &&
-            error !== null &&
-            'code' in error &&
-            error.code === 'P2002'
         );
     }
 
@@ -165,37 +140,123 @@ export class ProjectService {
         };
     };
 
-    // async update(user: UserEntity, projectId: string, updateProjectInput: UpdateProjectDataInput): Promise<ProjectEntity> {
-    //     const project = await this.projectModel.findById(projectId).exec();
+    async updateOwnedProject(
+        user: UserEntity,
+        projectId: string,
+        updateProjectInput: UpdateOwnedProjectInput,
+    ): Promise<ProjectEntity> {
+        const baseSlug = updateProjectInput.name
+            ? createSlug(updateProjectInput.name.trim())
+            : null;
 
-    //     if (!project) {
-    //         throw new NotFoundAppError('Project not found');
-    //     }
+        for (let attempt = 1; attempt <= MAX_SLUG_ATTEMPTS; attempt++) {
+            const slug = baseSlug
+                ? this.getSlugCandidate(baseSlug, attempt)
+                : undefined;
 
-    //     const canUpdateAny = user.permissions?.includes(Permission.PROJECT_UPDATE_ANY);
-    //     if (!canUpdateAny && project.authorId.toString() !== user.id) {
-    //         throw new ForbiddenAppError('You can only update your own projects');
-    //     }
+            try {
+                return await this.prismaService.project.update({
+                    where: {
+                        id: projectId,
+                        ownerId: user.id,
+                    },
+                    data: {
+                        ...updateProjectInput,
+                        ...(slug && { slug }),
+                    },
+                });
+            } catch (error) {
+                if (this.isSlugConflict(error)) {
+                    continue;
+                }
 
-    //     Object.assign(project, updateProjectInput);
-    //     await project.save();
+                if (
+                    error instanceof Prisma.PrismaClientKnownRequestError &&
+                    error.code === 'P2025'
+                ) {
+                    throw new NotFoundAppError('Project not found');
+                }
 
-    //     return this.toEntity(project);
-    // }
+                throw error;
+            }
+        }
 
-    // async delete(user: UserEntity, projectId: string): Promise<ProjectEntity> {
-    //     const project = await this.projectModel.findById(projectId);
-    //     if (!project) throw new NotFoundAppError('Project not found');
+        throw new ConflictAppError(
+            'Could not generate a unique project slug',
+        );
+    }
 
-    //     const canDeleteAny = user.permissions?.includes(Permission.PROJECT_DELETE_ANY);
-    //     if (!canDeleteAny && project.authorId.toString() !== user.id) {
-    //         throw new ForbiddenAppError('You can only delete your own projects');
-    //     }
+    async submitProjectForReview(user: UserEntity, projectId: string): Promise<ProjectEntity> {
+        try {
+            return await this.prismaService.project.update({
+                where: {
+                    id: projectId,
+                    ownerId: user.id,
+                },
+                data: {
+                    status: ProjectStatus.IN_REVIEW,
+                },
+            });
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                throw new NotFoundAppError('Project not found');        
+            }
 
-    //     await project.deleteOne();
-    //     return this.toEntity(project);
-    // }
+            throw error;
+        }
+    }
 
+    async ArchiveOwnedProject(user: UserEntity, projectId: string): Promise<ProjectEntity> {
+        try {
+            return await this.prismaService.project.update({
+                where: {
+                    id: projectId,
+                    ownerId: user.id,
+                },
+                data: {
+                    status: ProjectStatus.ARCHIVED,
+                    archivedAt: new Date(),
+                },
+            });
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                throw new NotFoundAppError('Project not found');
+            }
+
+            throw error;
+        }
+    }
+
+    private getSlugCandidate(
+        baseSlug: string,
+        attempt: number,
+    ): string {
+        if (attempt === 1) {
+            return baseSlug;
+        }
+
+        const suffix = `-${attempt}`;
+
+        return `${baseSlug.slice(
+            0,
+            MAX_SLUG_LENGTH - suffix.length,
+        )}${suffix}`;
+    }
+
+    private isSlugConflict(error: unknown): boolean {
+        return (
+            typeof error === 'object' &&
+            error !== null &&
+            'code' in error &&
+            error.code === 'P2002'
+        );
+    }
     // async getPublicProjects(
     //     args: GetPublicProjectsArgs,
     // ): Promise<PaginatedProjectsResponse> {

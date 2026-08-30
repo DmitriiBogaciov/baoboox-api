@@ -1,0 +1,36 @@
+info:
+  name: Archive Owned Project
+  type: graphql
+  seq: 8
+
+graphql:
+  method: POST
+  url: "{{host-gql}}"
+  body:
+    query: |-
+      mutation{
+        archiveOwnedProject(projectId: "cmt4t7yz60002ejxqxz7oua3w")
+      	{
+        	id
+          name
+          ownerId
+          description
+          slug
+          type
+          status
+          visibility
+      	}
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: before-request
+      code: req.setHeader('Authorization', `Bearer ${bru.getEnvVar('accessToken')}`)
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

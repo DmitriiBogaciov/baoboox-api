@@ -13,6 +13,7 @@ const AUTHOR_PERMISSIONS: Permission[] = [
   Permission.PROJECT_CREATE,
   Permission.PROJECT_UPDATE_OWN,
   Permission.PROJECT_DELETE_OWN,
+  Permission.PROJECT_SUBMIT_FOR_REVIEW,
 ];
 
 const MODERATOR_PERMISSIONS: Permission[] = [

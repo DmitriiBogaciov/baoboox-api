@@ -3,7 +3,7 @@ import { ProjectService } from './project.service';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { UserEntity } from '../users/entities/user.entity';
 import { ProjectEntity } from './entities/project.entity';
-import { CreateProjectInput, UpdateProjectInput, ProjectQueryOutput, ProjectQueryInput } from './dto';
+import { CreateProjectInput, UpdateOwnedProjectInput, ProjectQueryOutput, ProjectQueryInput } from './dto';
 import { UseGuards } from '@nestjs/common';
 import { GqlAuthGuard } from '../auth/gql-auth.guard';
 import { PermissionsGuard } from '../auth/permissions.guard';
@@ -36,6 +36,40 @@ export class ProjectResolver {
     ): Promise<ProjectQueryOutput> {
         const result = await this.projectService.find(input ?? {});
         return result;
+    }
+
+    @UseGuards(GqlAuthGuard, PermissionsGuard)
+    @Permissions(Permission.PROJECT_UPDATE_OWN)
+    @Mutation(() => ProjectEntity, { name: 'updateOwnedProject' })
+    async updateOwnedProject(
+        @CurrentUser() user: UserEntity,
+        @Args('projectId') projectId: string,
+        @Args('input', { nullable: true }) input?: UpdateOwnedProjectInput,
+    ): Promise<ProjectEntity> {
+        const project = await this.projectService.updateOwnedProject(user, projectId, input ?? {});
+        return project;
+    }
+
+    @UseGuards(GqlAuthGuard, PermissionsGuard)
+    @Permissions(Permission.PROJECT_SUBMIT_FOR_REVIEW)
+    @Mutation(() => ProjectEntity, { name: 'submitProjectForReview' })
+    async submitProjectForReview(
+        @CurrentUser() user: UserEntity,
+        @Args('projectId') projectId: string,
+    ): Promise<ProjectEntity> {
+        const project = await this.projectService.submitProjectForReview(user, projectId);
+        return project;
+    }
+
+    @UseGuards(GqlAuthGuard, PermissionsGuard)
+    @Permissions(Permission.PROJECT_DELETE_OWN)
+    @Mutation(() => ProjectEntity, { name: 'archiveOwnedProject' })
+    async archiveOwnedProject(
+        @CurrentUser() user: UserEntity,
+        @Args('projectId') projectId: string,
+    ): Promise<ProjectEntity> {
+        const project = await this.projectService.ArchiveOwnedProject(user, projectId);
+        return project;
     }
 
     // @UseGuards(GqlAuthGuard, PermissionsGuard)

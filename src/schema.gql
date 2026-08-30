@@ -48,6 +48,7 @@ input LoginInput {
 }
 
 type Mutation {
+  archiveOwnedProject(projectId: String!): ProjectEntity!
   changeUserRole(input: ChangeUserRoleInput!): UserEntity!
   createProject(input: CreateProjectInput!): ProjectEntity!
   deleteExpiredSessions: Float!
@@ -58,6 +59,8 @@ type Mutation {
   refresh: AuthResponseEntity!
   register(input: RegisterInput!): AuthResponseEntity!
   revokeSession(input: RevokeSessionInput!): Boolean!
+  submitProjectForReview(projectId: String!): ProjectEntity!
+  updateOwnedProject(input: UpdateOwnedProjectInput, projectId: String!): ProjectEntity!
   updateUser(data: UpdateUserInput!, id: String!): UserEntity!
 }
 
@@ -77,6 +80,7 @@ enum Permission {
   PROJECT_DELETE_ANY
   PROJECT_DELETE_OWN
   PROJECT_PUBLISH
+  PROJECT_SUBMIT_FOR_REVIEW
   PROJECT_UPDATE_ANY
   PROJECT_UPDATE_OWN
   PROJECT_VIEW_ANY
@@ -195,6 +199,15 @@ input RevokeSessionInput {
 enum SortDirection {
   ASC
   DESC
+}
+
+input UpdateOwnedProjectInput {
+  coverUrl: String
+  description: String
+  language: ProjectLanguage
+  name: String
+  type: ProjectType
+  visibility: ProjectVisibility
 }
 
 input UpdateUserInput {

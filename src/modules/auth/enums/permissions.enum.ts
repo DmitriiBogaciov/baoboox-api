@@ -6,6 +6,7 @@ export enum Permission {
   PROJECT_DELETE_ANY = 'project:delete:any',
   PROJECT_PUBLISH = 'project:publish',
   PROJECT_VIEW_ANY = 'project:view:any',
+  PROJECT_SUBMIT_FOR_REVIEW = 'project:submit-for-review',
 
   COMMENT_CREATE = 'comment:create',
   COMMENT_DELETE_OWN = 'comment:delete:own',

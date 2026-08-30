@@ -1,15 +1,15 @@
 info:
-  name: Create Project
+  name: Update Owned Project
   type: graphql
-  seq: 1
+  seq: 2
 
 graphql:
   method: POST
   url: "{{host-gql}}"
   body:
     query: |-
-      mutation ($input: CreateProjectInput!) {
-        createProject(input: $input) {
+      mutation ($projectId: String!, $input: UpdateOwnedProjectInput!){
+        updateOwnedProject(projectId: $projectId, input: $input){
           id
           name
           ownerId
@@ -22,17 +22,19 @@ graphql:
       }
     variables: |-
       {
+        "projectId": "cmt4t7yz60002ejxqxz7oua3w",
         "input": {
-          "name": "First project",
-          "description": "Fourth slug try"
+          "name": "AA First project"
         }
       }
-  auth: inherit
+  auth:
+    type: bearer
+    token: "{{accessToken}}"
 
 runtime:
   scripts:
     - type: before-request
-      code: req.setHeader("Authorization", `Bearer ${bru.getEnvVar("accessToken")}`)
+      code: req.setHeader('Authorization', `Bearer ${bru.getEnvVar('accessToken')}`)
 
 settings:
   encodeUrl: true
