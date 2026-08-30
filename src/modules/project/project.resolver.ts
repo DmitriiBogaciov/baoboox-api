@@ -3,13 +3,14 @@ import { ProjectService } from './project.service';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { UserEntity } from '../users/entities/user.entity';
 import { ProjectEntity } from './entities/project.entity';
-import { CreateProjectInput, UpdateOwnedProjectInput, ProjectQueryOutput, ProjectQueryInput } from './dto';
+import { CreateProjectInput, UpdateOwnedProjectInput, ProjectQueryOutput, PublicProjectQueryInput, ProjectQueryInput } from './dto';
 import { UseGuards } from '@nestjs/common';
 import { GqlAuthGuard } from '../auth/gql-auth.guard';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Permissions } from '../auth/decorators/permissions.decorator';
 import { Permission } from '../auth/enums/permissions.enum';
 import { stringify } from 'node:querystring';
+import { Project } from './schemas/project.schema';
 
 @Resolver()
 export class ProjectResolver {
@@ -35,6 +36,14 @@ export class ProjectResolver {
         @Args('input', {type: () => ProjectQueryInput, nullable: true}) input?: ProjectQueryInput
     ): Promise<ProjectQueryOutput> {
         const result = await this.projectService.find(input ?? {});
+        return result;
+    }
+
+    @Query(() => ProjectQueryOutput, { name: 'getPublicProjects' })
+    async getPublicProjects(
+        @Args('input', {type: () => PublicProjectQueryInput, nullable: true}) input?: PublicProjectQueryInput    
+    ): Promise<ProjectQueryOutput> {
+        const result = await this.projectService.findPublic(input ?? {});
         return result;
     }
 
@@ -68,8 +77,19 @@ export class ProjectResolver {
         @CurrentUser() user: UserEntity,
         @Args('projectId') projectId: string,
     ): Promise<ProjectEntity> {
-        const project = await this.projectService.ArchiveOwnedProject(user, projectId);
+        const project = await this.projectService.archiveOwnedProject(user, projectId);
         return project;
+    }
+
+    @UseGuards(GqlAuthGuard, PermissionsGuard)
+    @Permissions(Permission.PROJECT_PUBLISH)
+    @Mutation(() => ProjectEntity, { name: 'publishProject' })
+    async publishProject(
+        @CurrentUser() user: UserEntity,
+        @Args('projectId') projectId: string,
+    ): Promise<ProjectEntity> {
+        const project = await this.projectService.publishProject(user, projectId);
+        return project; 
     }
 
     // @UseGuards(GqlAuthGuard, PermissionsGuard)

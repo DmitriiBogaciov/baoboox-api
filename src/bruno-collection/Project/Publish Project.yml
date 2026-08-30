@@ -8,18 +8,27 @@ graphql:
   url: "{{host-gql}}"
   body:
     query: |-
-      mutation{
-        publishProject(projectId: "6a4e1c0b9cf916ffaae4efb7")
+      mutation($projectId: String!){
+        publishProject(projectId: $projectId)
         {
         	id
-        	title
+        	name
           description
-          isPublished
+          status
+          visibility
+          createdAt
+          updatedAt
+          publishedAt
+          archivedAt
         }
+      }
+    variables: |-
+      {
+        "projectId": "cmt4t77n60001ejxqxzv5muo8"
       }
   auth:
     type: bearer
-    token: "{{accessToken}}"
+    token: ""
 
 runtime:
   scripts:
@@ -31,3 +40,4 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+  forwardAuthorizationHeader: true

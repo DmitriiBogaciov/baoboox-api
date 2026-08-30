@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CreateProjectInput, ProjectQueryInput, ProjectQueryOutput, UpdateOwnedProjectInput } from './dto';
+import { CreateProjectInput, ProjectQueryInput, PublicProjectQueryInput, ProjectQueryOutput, UpdateOwnedProjectInput } from './dto';
 import { createSlug } from '../../common/utils/create-slug.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProjectEntity } from './entities/project.entity';
@@ -209,7 +209,7 @@ export class ProjectService {
         }
     }
 
-    async ArchiveOwnedProject(user: UserEntity, projectId: string): Promise<ProjectEntity> {
+    async archiveOwnedProject(user: UserEntity, projectId: string): Promise<ProjectEntity> {
         try {
             return await this.prismaService.project.update({
                 where: {
@@ -221,6 +221,99 @@ export class ProjectService {
                     archivedAt: new Date(),
                 },
             });
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                throw new NotFoundAppError('Project not found');
+            }
+
+            throw error;
+        }
+    }
+
+    async findPublic(input: PublicProjectQueryInput): Promise<ProjectQueryOutput> {
+        const page = input?.pagination?.page ?? 1;
+        const limit = input?.pagination?.limit ?? 20;
+        const skip = (page - 1) * limit;
+
+        const search = input?.filter?.search?.trim();
+
+        const where: Prisma.ProjectWhereInput = {
+            status: ProjectStatus.PUBLISHED,
+            visibility: 'PUBLIC',  
+        };
+
+        if (input?.filter?.search) {
+            where.OR = [
+                {
+                    name: {
+                        contains: search,
+                        mode: 'insensitive'
+                    }
+                },
+                {
+                    description: {
+                        contains: search,
+                        mode: 'insensitive'
+                    }
+                },
+                {
+                    slug: {
+                        contains: search,
+                        mode: 'insensitive'
+                    }
+                },
+            ]
+        };
+
+        if (input?.filter?.type) {
+            where.type = input.filter.type;
+        }
+
+        if (input?.filter?.language) {
+            where.language = input.filter.language;
+        }
+
+        const sortField = input?.sort?.field ?? 'createdAt';
+        const sortDirection = input?.sort?.direction ?? 'desc';
+
+        const [projects, total] = await this.prismaService.$transaction([
+            this.prismaService.project.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: {
+                    [sortField]: sortDirection,
+                },
+            }),
+            this.prismaService.project.count({ where }),
+        ]);
+
+        return {
+            items: projects,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            hasNextPage: page * limit < total,
+            hasPrevPage: page > 1,
+        };
+    }
+
+    async publishProject(user: UserEntity, projectId: string): Promise<ProjectEntity> {
+        try {
+            return await this.prismaService.project.update({
+                where: {
+                    id: projectId
+                },
+                data: {
+                    status: ProjectStatus.PUBLISHED,
+                    visibility: 'PUBLIC',
+                    publishedAt: new Date(),
+                }
+            })
         } catch (error) {
             if (
                 error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -257,6 +350,7 @@ export class ProjectService {
             error.code === 'P2002'
         );
     }
+
     // async getPublicProjects(
     //     args: GetPublicProjectsArgs,
     // ): Promise<PaginatedProjectsResponse> {

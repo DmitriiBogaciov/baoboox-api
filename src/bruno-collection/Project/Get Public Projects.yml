@@ -1,15 +1,15 @@
 info:
-  name: Get Projects
+  name: Get Public Projects
   type: graphql
-  seq: 4
+  seq: 9
 
 graphql:
   method: POST
   url: "{{host-gql}}"
   body:
     query: |-
-      query($input: ProjectQueryInput!){
-        getProjects(input: $input) {
+      query($input: PublicProjectQueryInput!){
+        getPublicProjects(input: $input) {
           items{
             id
             name
@@ -19,9 +19,6 @@ graphql:
          	 	type
             status
             visibility
-            createdAt
-            updatedAt
-            archivedAt
           }
           page
           limit
@@ -40,11 +37,6 @@ graphql:
   auth:
     type: bearer
     token: ""
-
-runtime:
-  scripts:
-    - type: before-request
-      code: req.setHeader('Authorization', `Bearer ${bru.getEnvVar('accessToken')}`)
 
 settings:
   encodeUrl: true

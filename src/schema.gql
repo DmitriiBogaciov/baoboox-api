@@ -56,6 +56,7 @@ type Mutation {
   login(input: LoginInput!): AuthResponseEntity!
   logout: Boolean!
   logoutAll: Float!
+  publishProject(projectId: String!): ProjectEntity!
   refresh: AuthResponseEntity!
   register(input: RegisterInput!): AuthResponseEntity!
   revokeSession(input: RevokeSessionInput!): Boolean!
@@ -177,8 +178,21 @@ enum ProjectVisibility {
   UNLISTED
 }
 
+input PublicProjectFilterInput {
+  language: ProjectLanguage
+  search: String
+  type: ProjectType
+}
+
+input PublicProjectQueryInput {
+  filter: PublicProjectFilterInput
+  pagination: PaginationInput
+  sort: ProjectSortInput
+}
+
 type Query {
   getProjects(input: ProjectQueryInput): ProjectQueryOutput!
+  getPublicProjects(input: PublicProjectQueryInput): ProjectQueryOutput!
   getUserById(id: String!): UserEntity!
   getUsers(input: UserQueryInput): UsersResponse!
   health: String!
