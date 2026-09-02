@@ -9,8 +9,6 @@ import { GqlAuthGuard } from '../auth/gql-auth.guard';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Permissions } from '../auth/decorators/permissions.decorator';
 import { Permission } from '../auth/enums/permissions.enum';
-import { stringify } from 'node:querystring';
-import { Project } from './schemas/project.schema';
 
 @Resolver()
 export class ProjectResolver {
@@ -70,8 +68,7 @@ export class ProjectResolver {
         return project;
     }
 
-    @UseGuards(GqlAuthGuard, PermissionsGuard)
-    @Permissions(Permission.PROJECT_DELETE_OWN)
+    @UseGuards(GqlAuthGuard)
     @Mutation(() => ProjectEntity, { name: 'archiveOwnedProject' })
     async archiveOwnedProject(
         @CurrentUser() user: UserEntity,
@@ -81,70 +78,61 @@ export class ProjectResolver {
         return project;
     }
 
+    @UseGuards(GqlAuthGuard)
+    @Mutation(() => ProjectEntity, { name: 'restoreOwnedProject' })
+    async restoreOwnedProject(
+        @CurrentUser() user: UserEntity,
+        @Args('projectId') projectId: string,
+    ): Promise<ProjectEntity> {
+        const project = await this.projectService.restoreOwnedProject(user, projectId);
+        return project;
+    }
+
     @UseGuards(GqlAuthGuard, PermissionsGuard)
     @Permissions(Permission.PROJECT_PUBLISH)
     @Mutation(() => ProjectEntity, { name: 'publishProject' })
     async publishProject(
-        @CurrentUser() user: UserEntity,
         @Args('projectId') projectId: string,
     ): Promise<ProjectEntity> {
-        const project = await this.projectService.publishProject(user, projectId);
+        const project = await this.projectService.publishProject(projectId);
         return project; 
     }
 
-    // @UseGuards(GqlAuthGuard, PermissionsGuard)
-    // @Permissions(Permission.PROJECT_UPDATE_OWN)
-    // @Mutation(() => ProjectEntity, { name: 'updateProject' })
-    // async update(
-    //     @CurrentUser() user: UserEntity,
-    //     @Args('input') input: UpdateProjectInput,
-    // ): Promise<ProjectEntity> {
-    //     const project = await this.projectService.update(user, input.id, input.data);
-    //     return project;
-    // }
+    @UseGuards(GqlAuthGuard, PermissionsGuard)
+    @Permissions(Permission.PROJECT_REJECT_PUBLISH)
+    @Mutation(() => ProjectEntity, { name: 'rejectPublishProject' })
+    async rejectPublishProject(
+        @Args('projectId') projectId: string,
+    ): Promise<ProjectEntity> {
+        const project = await this.projectService.rejectPublishProject(projectId);
+        return project; 
+    }
 
-    // @UseGuards(GqlAuthGuard, PermissionsGuard)
-    // @Permissions(Permission.PROJECT_DELETE_OWN)
-    // @Mutation(() => ProjectEntity, { name: 'deleteProject' })
-    // async delete(
-    //     @CurrentUser() user: UserEntity,
-    //     @Args('projectId') projectId: string,
-    // ): Promise<ProjectEntity> {
-    //     const project = await this.projectService.delete(user, projectId);
-    //     return project;
-    // }
+    @UseGuards(GqlAuthGuard)
+    @Mutation(() => ProjectEntity, { name: 'rejectOwnedPublishProject' })
+    async rejectOwnedPublishProject(
+        @CurrentUser() user: UserEntity,
+        @Args('projectId') projectId: string,
+    ): Promise<ProjectEntity> {
+        const project = await this.projectService.rejectOwnedPublishProject(user, projectId);
+        return project; 
+    }
+    
+    @UseGuards(GqlAuthGuard, PermissionsGuard)
+    @Permissions(Permission.PROJECT_UNPUBLISH)
+    @Mutation(() => ProjectEntity, { name: 'unpublishProject' })
+    async unpublishProject(
+        @Args('projectId') projectId: string,
+    ): Promise<ProjectEntity> {
+        const project = await this.projectService.unpublishProject(projectId);
+        return project;
+    }
 
-    // @Query(() => PaginatedProjectsResponse, { name: 'getPublicProjects' })
-    // async getPublishedProjects(
-    //     @Args() args: GetPublicProjectsArgs,
-    // ): Promise<PaginatedProjectsResponse> {
-    //     const projects = await this.projectService.getPublicProjects(args);
-    //     return projects;
-    // }
-
-    // @UseGuards(GqlAuthGuard)
-    // @Query(() => [ProjectEntity], { name: 'getUserProjects' })
-    // async getUserProjects(
-    //     @CurrentUser() user: UserEntity
-    // ): Promise<ProjectEntity[]> {
-    //     return this.projectService.getUserProjects(user.id);
-    // }
-
-    // @UseGuards(GqlAuthGuard, PermissionsGuard)
-    // @Permissions(Permission.PROJECT_VIEW_ANY)
-    // @Query(() => String, { name: 'getAllProjects' })
-    // async getAllProjects(): Promise<String> {
-    //     return 'Get all projects';
-    // }
-
-    // @UseGuards(GqlAuthGuard, PermissionsGuard)
-    // @Permissions(Permission.PROJECT_PUBLISH)
-    // @Mutation(() => ProjectEntity, { name: 'publishProject' })
-    // async publishProject(
-    //     @CurrentUser() user: UserEntity,
-    //     @Args('projectId') projectId: string,
-    // ): Promise<ProjectEntity> {
-    //     const project = await this.projectService.publish(user, projectId);
-    //     return project;
-    // }
+    @UseGuards(GqlAuthGuard)
+    @Mutation(() => [ProjectEntity], { name: 'getOwnedProjects'})
+    async getOwnedProjects(
+        @CurrentUser() user: UserEntity
+    ): Promise<ProjectEntity[]> {
+        return await this.projectService.getOwnedProjects(user);
+    }
 }

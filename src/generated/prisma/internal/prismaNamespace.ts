@@ -386,7 +386,8 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   User: 'User',
   AuthSession: 'AuthSession',
-  Project: 'Project'
+  Project: 'Project',
+  ProjectModerationLog: 'ProjectModerationLog'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -402,7 +403,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "authSession" | "project"
+    modelProps: "user" | "authSession" | "project" | "projectModerationLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -628,6 +629,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ProjectModerationLog: {
+      payload: Prisma.$ProjectModerationLogPayload<ExtArgs>
+      fields: Prisma.ProjectModerationLogFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ProjectModerationLogFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModerationLogPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ProjectModerationLogFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModerationLogPayload>
+        }
+        findFirst: {
+          args: Prisma.ProjectModerationLogFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModerationLogPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ProjectModerationLogFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModerationLogPayload>
+        }
+        findMany: {
+          args: Prisma.ProjectModerationLogFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModerationLogPayload>[]
+        }
+        create: {
+          args: Prisma.ProjectModerationLogCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModerationLogPayload>
+        }
+        createMany: {
+          args: Prisma.ProjectModerationLogCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ProjectModerationLogCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModerationLogPayload>[]
+        }
+        delete: {
+          args: Prisma.ProjectModerationLogDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModerationLogPayload>
+        }
+        update: {
+          args: Prisma.ProjectModerationLogUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModerationLogPayload>
+        }
+        deleteMany: {
+          args: Prisma.ProjectModerationLogDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ProjectModerationLogUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ProjectModerationLogUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModerationLogPayload>[]
+        }
+        upsert: {
+          args: Prisma.ProjectModerationLogUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ProjectModerationLogPayload>
+        }
+        aggregate: {
+          args: Prisma.ProjectModerationLogAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateProjectModerationLog>
+        }
+        groupBy: {
+          args: Prisma.ProjectModerationLogGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProjectModerationLogGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ProjectModerationLogCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ProjectModerationLogCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -718,6 +793,21 @@ export const ProjectScalarFieldEnum = {
 } as const
 
 export type ProjectScalarFieldEnum = (typeof ProjectScalarFieldEnum)[keyof typeof ProjectScalarFieldEnum]
+
+
+export const ProjectModerationLogScalarFieldEnum = {
+  id: 'id',
+  projectId: 'projectId',
+  actorId: 'actorId',
+  action: 'action',
+  reason: 'reason',
+  comment: 'comment',
+  previousStatus: 'previousStatus',
+  nextStatus: 'nextStatus',
+  createdAt: 'createdAt'
+} as const
+
+export type ProjectModerationLogScalarFieldEnum = (typeof ProjectModerationLogScalarFieldEnum)[keyof typeof ProjectModerationLogScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -856,6 +946,20 @@ export type ListEnumProjectLanguageFieldRefInput<$PrismaModel> = FieldRefInputTy
 
 
 /**
+ * Reference to a field of type 'ProjectModerationAction'
+ */
+export type EnumProjectModerationActionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ProjectModerationAction'>
+    
+
+
+/**
+ * Reference to a field of type 'ProjectModerationAction[]'
+ */
+export type ListEnumProjectModerationActionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ProjectModerationAction[]'>
+    
+
+
+/**
  * Reference to a field of type 'Int'
  */
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -981,6 +1085,7 @@ export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
   authSession?: Prisma.AuthSessionOmit
   project?: Prisma.ProjectOmit
+  projectModerationLog?: Prisma.ProjectModerationLogOmit
 }
 
 /* Types for Logging */

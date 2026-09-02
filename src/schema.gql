@@ -53,14 +53,19 @@ type Mutation {
   createProject(input: CreateProjectInput!): ProjectEntity!
   deleteExpiredSessions: Float!
   deleteUser(input: DeleteUserInput!): Boolean!
+  getOwnedProjects: [ProjectEntity!]!
   login(input: LoginInput!): AuthResponseEntity!
   logout: Boolean!
   logoutAll: Float!
   publishProject(projectId: String!): ProjectEntity!
   refresh: AuthResponseEntity!
   register(input: RegisterInput!): AuthResponseEntity!
+  rejectOwnedPublishProject(projectId: String!): ProjectEntity!
+  rejectPublishProject(projectId: String!): ProjectEntity!
+  restoreOwnedProject(projectId: String!): ProjectEntity!
   revokeSession(input: RevokeSessionInput!): Boolean!
   submitProjectForReview(projectId: String!): ProjectEntity!
+  unpublishProject(projectId: String!): ProjectEntity!
   updateOwnedProject(input: UpdateOwnedProjectInput, projectId: String!): ProjectEntity!
   updateUser(data: UpdateUserInput!, id: String!): UserEntity!
 }
@@ -81,7 +86,9 @@ enum Permission {
   PROJECT_DELETE_ANY
   PROJECT_DELETE_OWN
   PROJECT_PUBLISH
+  PROJECT_REJECT_PUBLISH
   PROJECT_SUBMIT_FOR_REVIEW
+  PROJECT_UNPUBLISH
   PROJECT_UPDATE_ANY
   PROJECT_UPDATE_OWN
   PROJECT_VIEW_ANY

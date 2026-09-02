@@ -62,3 +62,16 @@ export const ProjectLanguage = {
 } as const
 
 export type ProjectLanguage = (typeof ProjectLanguage)[keyof typeof ProjectLanguage]
+
+
+export const ProjectModerationAction = {
+  SUBMITTED: 'SUBMITTED',
+  PUBLISHED: 'PUBLISHED',
+  UNPUBLISHED: 'UNPUBLISHED',
+  REJECTED: 'REJECTED',
+  BLOCKED: 'BLOCKED',
+  ARCHIVED: 'ARCHIVED',
+  UNBLOCKED: 'UNBLOCKED'
+} as const
+
+export type ProjectModerationAction = (typeof ProjectModerationAction)[keyof typeof ProjectModerationAction]

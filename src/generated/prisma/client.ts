@@ -54,3 +54,8 @@ export type AuthSession = Prisma.AuthSessionModel
  * 
  */
 export type Project = Prisma.ProjectModel
+/**
+ * Model ProjectModerationLog
+ * 
+ */
+export type ProjectModerationLog = Prisma.ProjectModerationLogModel

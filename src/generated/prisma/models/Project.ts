@@ -254,6 +254,7 @@ export type ProjectWhereInput = {
   archivedAt?: Prisma.DateTimeNullableFilter<"Project"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Project"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Project"> | Date | string
+  projectModerationLogs?: Prisma.ProjectModerationLogListRelationFilter
   owner?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }
 
@@ -272,6 +273,7 @@ export type ProjectOrderByWithRelationInput = {
   archivedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  projectModerationLogs?: Prisma.ProjectModerationLogOrderByRelationAggregateInput
   owner?: Prisma.UserOrderByWithRelationInput
 }
 
@@ -293,6 +295,7 @@ export type ProjectWhereUniqueInput = Prisma.AtLeast<{
   archivedAt?: Prisma.DateTimeNullableFilter<"Project"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Project"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Project"> | Date | string
+  projectModerationLogs?: Prisma.ProjectModerationLogListRelationFilter
   owner?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }, "id" | "slug">
 
@@ -350,6 +353,7 @@ export type ProjectCreateInput = {
   archivedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  projectModerationLogs?: Prisma.ProjectModerationLogCreateNestedManyWithoutProjectInput
   owner: Prisma.UserCreateNestedOneWithoutProjectsInput
 }
 
@@ -368,6 +372,7 @@ export type ProjectUncheckedCreateInput = {
   archivedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  projectModerationLogs?: Prisma.ProjectModerationLogUncheckedCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectUpdateInput = {
@@ -384,6 +389,7 @@ export type ProjectUpdateInput = {
   archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  projectModerationLogs?: Prisma.ProjectModerationLogUpdateManyWithoutProjectNestedInput
   owner?: Prisma.UserUpdateOneRequiredWithoutProjectsNestedInput
 }
 
@@ -402,6 +408,7 @@ export type ProjectUncheckedUpdateInput = {
   archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  projectModerationLogs?: Prisma.ProjectModerationLogUncheckedUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectCreateManyInput = {
@@ -515,6 +522,11 @@ export type ProjectMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
 }
 
+export type ProjectScalarRelationFilter = {
+  is?: Prisma.ProjectWhereInput
+  isNot?: Prisma.ProjectWhereInput
+}
+
 export type ProjectCreateNestedManyWithoutOwnerInput = {
   create?: Prisma.XOR<Prisma.ProjectCreateWithoutOwnerInput, Prisma.ProjectUncheckedCreateWithoutOwnerInput> | Prisma.ProjectCreateWithoutOwnerInput[] | Prisma.ProjectUncheckedCreateWithoutOwnerInput[]
   connectOrCreate?: Prisma.ProjectCreateOrConnectWithoutOwnerInput | Prisma.ProjectCreateOrConnectWithoutOwnerInput[]
@@ -573,6 +585,20 @@ export type EnumProjectLanguageFieldUpdateOperationsInput = {
   set?: $Enums.ProjectLanguage
 }
 
+export type ProjectCreateNestedOneWithoutProjectModerationLogsInput = {
+  create?: Prisma.XOR<Prisma.ProjectCreateWithoutProjectModerationLogsInput, Prisma.ProjectUncheckedCreateWithoutProjectModerationLogsInput>
+  connectOrCreate?: Prisma.ProjectCreateOrConnectWithoutProjectModerationLogsInput
+  connect?: Prisma.ProjectWhereUniqueInput
+}
+
+export type ProjectUpdateOneRequiredWithoutProjectModerationLogsNestedInput = {
+  create?: Prisma.XOR<Prisma.ProjectCreateWithoutProjectModerationLogsInput, Prisma.ProjectUncheckedCreateWithoutProjectModerationLogsInput>
+  connectOrCreate?: Prisma.ProjectCreateOrConnectWithoutProjectModerationLogsInput
+  upsert?: Prisma.ProjectUpsertWithoutProjectModerationLogsInput
+  connect?: Prisma.ProjectWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ProjectUpdateToOneWithWhereWithoutProjectModerationLogsInput, Prisma.ProjectUpdateWithoutProjectModerationLogsInput>, Prisma.ProjectUncheckedUpdateWithoutProjectModerationLogsInput>
+}
+
 export type ProjectCreateWithoutOwnerInput = {
   id?: string
   name: string
@@ -587,6 +613,7 @@ export type ProjectCreateWithoutOwnerInput = {
   archivedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  projectModerationLogs?: Prisma.ProjectModerationLogCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectUncheckedCreateWithoutOwnerInput = {
@@ -603,6 +630,7 @@ export type ProjectUncheckedCreateWithoutOwnerInput = {
   archivedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  projectModerationLogs?: Prisma.ProjectModerationLogUncheckedCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectCreateOrConnectWithoutOwnerInput = {
@@ -651,6 +679,90 @@ export type ProjectScalarWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Project"> | Date | string
 }
 
+export type ProjectCreateWithoutProjectModerationLogsInput = {
+  id?: string
+  name: string
+  slug: string
+  description?: string | null
+  coverUrl?: string | null
+  type?: $Enums.ProjectType
+  status?: $Enums.ProjectStatus
+  visibility?: $Enums.ProjectVisibility
+  language?: $Enums.ProjectLanguage
+  publishedAt?: Date | string | null
+  archivedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  owner: Prisma.UserCreateNestedOneWithoutProjectsInput
+}
+
+export type ProjectUncheckedCreateWithoutProjectModerationLogsInput = {
+  id?: string
+  name: string
+  slug: string
+  description?: string | null
+  coverUrl?: string | null
+  type?: $Enums.ProjectType
+  status?: $Enums.ProjectStatus
+  visibility?: $Enums.ProjectVisibility
+  language?: $Enums.ProjectLanguage
+  ownerId: string
+  publishedAt?: Date | string | null
+  archivedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type ProjectCreateOrConnectWithoutProjectModerationLogsInput = {
+  where: Prisma.ProjectWhereUniqueInput
+  create: Prisma.XOR<Prisma.ProjectCreateWithoutProjectModerationLogsInput, Prisma.ProjectUncheckedCreateWithoutProjectModerationLogsInput>
+}
+
+export type ProjectUpsertWithoutProjectModerationLogsInput = {
+  update: Prisma.XOR<Prisma.ProjectUpdateWithoutProjectModerationLogsInput, Prisma.ProjectUncheckedUpdateWithoutProjectModerationLogsInput>
+  create: Prisma.XOR<Prisma.ProjectCreateWithoutProjectModerationLogsInput, Prisma.ProjectUncheckedCreateWithoutProjectModerationLogsInput>
+  where?: Prisma.ProjectWhereInput
+}
+
+export type ProjectUpdateToOneWithWhereWithoutProjectModerationLogsInput = {
+  where?: Prisma.ProjectWhereInput
+  data: Prisma.XOR<Prisma.ProjectUpdateWithoutProjectModerationLogsInput, Prisma.ProjectUncheckedUpdateWithoutProjectModerationLogsInput>
+}
+
+export type ProjectUpdateWithoutProjectModerationLogsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumProjectTypeFieldUpdateOperationsInput | $Enums.ProjectType
+  status?: Prisma.EnumProjectStatusFieldUpdateOperationsInput | $Enums.ProjectStatus
+  visibility?: Prisma.EnumProjectVisibilityFieldUpdateOperationsInput | $Enums.ProjectVisibility
+  language?: Prisma.EnumProjectLanguageFieldUpdateOperationsInput | $Enums.ProjectLanguage
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  owner?: Prisma.UserUpdateOneRequiredWithoutProjectsNestedInput
+}
+
+export type ProjectUncheckedUpdateWithoutProjectModerationLogsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  type?: Prisma.EnumProjectTypeFieldUpdateOperationsInput | $Enums.ProjectType
+  status?: Prisma.EnumProjectStatusFieldUpdateOperationsInput | $Enums.ProjectStatus
+  visibility?: Prisma.EnumProjectVisibilityFieldUpdateOperationsInput | $Enums.ProjectVisibility
+  language?: Prisma.EnumProjectLanguageFieldUpdateOperationsInput | $Enums.ProjectLanguage
+  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
+  publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 export type ProjectCreateManyOwnerInput = {
   id?: string
   name: string
@@ -681,6 +793,7 @@ export type ProjectUpdateWithoutOwnerInput = {
   archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  projectModerationLogs?: Prisma.ProjectModerationLogUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectUncheckedUpdateWithoutOwnerInput = {
@@ -697,6 +810,7 @@ export type ProjectUncheckedUpdateWithoutOwnerInput = {
   archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  projectModerationLogs?: Prisma.ProjectModerationLogUncheckedUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectUncheckedUpdateManyWithoutOwnerInput = {
@@ -716,6 +830,35 @@ export type ProjectUncheckedUpdateManyWithoutOwnerInput = {
 }
 
 
+/**
+ * Count Type ProjectCountOutputType
+ */
+
+export type ProjectCountOutputType = {
+  projectModerationLogs: number
+}
+
+export type ProjectCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  projectModerationLogs?: boolean | ProjectCountOutputTypeCountProjectModerationLogsArgs
+}
+
+/**
+ * ProjectCountOutputType without action
+ */
+export type ProjectCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProjectCountOutputType
+   */
+  select?: Prisma.ProjectCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * ProjectCountOutputType without action
+ */
+export type ProjectCountOutputTypeCountProjectModerationLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ProjectModerationLogWhereInput
+}
+
 
 export type ProjectSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -732,7 +875,9 @@ export type ProjectSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   archivedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  projectModerationLogs?: boolean | Prisma.Project$projectModerationLogsArgs<ExtArgs>
   owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  _count?: boolean | Prisma.ProjectCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["project"]>
 
 export type ProjectSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -790,7 +935,9 @@ export type ProjectSelectScalar = {
 
 export type ProjectOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "description" | "coverUrl" | "type" | "status" | "visibility" | "language" | "ownerId" | "publishedAt" | "archivedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["project"]>
 export type ProjectInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  projectModerationLogs?: boolean | Prisma.Project$projectModerationLogsArgs<ExtArgs>
   owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  _count?: boolean | Prisma.ProjectCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ProjectIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -802,6 +949,7 @@ export type ProjectIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
 export type $ProjectPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Project"
   objects: {
+    projectModerationLogs: Prisma.$ProjectModerationLogPayload<ExtArgs>[]
     owner: Prisma.$UserPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1213,6 +1361,7 @@ readonly fields: ProjectFieldRefs;
  */
 export interface Prisma__ProjectClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  projectModerationLogs<T extends Prisma.Project$projectModerationLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Project$projectModerationLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProjectModerationLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   owner<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1655,6 +1804,30 @@ export type ProjectDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Inter
    * Limit how many Projects to delete.
    */
   limit?: number
+}
+
+/**
+ * Project.projectModerationLogs
+ */
+export type Project$projectModerationLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProjectModerationLog
+   */
+  select?: Prisma.ProjectModerationLogSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ProjectModerationLog
+   */
+  omit?: Prisma.ProjectModerationLogOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ProjectModerationLogInclude<ExtArgs> | null
+  where?: Prisma.ProjectModerationLogWhereInput
+  orderBy?: Prisma.ProjectModerationLogOrderByWithRelationInput | Prisma.ProjectModerationLogOrderByWithRelationInput[]
+  cursor?: Prisma.ProjectModerationLogWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ProjectModerationLogScalarFieldEnum | Prisma.ProjectModerationLogScalarFieldEnum[]
 }
 
 /**

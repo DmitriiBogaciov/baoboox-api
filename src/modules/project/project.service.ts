@@ -140,6 +140,18 @@ export class ProjectService {
         };
     };
 
+    async getOwnedProjects(user: UserEntity): Promise<ProjectEntity[]> {
+        try {
+            return await this.prismaService.project.findMany({
+                where: {
+                    ownerId: user.id,
+                }
+            })
+        } catch (error) {
+            throw new ServiceUnavailableAppError('Failed to retrieve owned projects');
+        }
+    }
+
     async updateOwnedProject(
         user: UserEntity,
         projectId: string,
@@ -188,21 +200,34 @@ export class ProjectService {
 
     async submitProjectForReview(user: UserEntity, projectId: string): Promise<ProjectEntity> {
         try {
-            return await this.prismaService.project.update({
-                where: {
-                    id: projectId,
-                    ownerId: user.id,
-                },
-                data: {
-                    status: ProjectStatus.IN_REVIEW,
-                },
+            return await this.prismaService.$transaction(async (prisma) => {
+                const project = await prisma.project.update({
+                    where: {
+                        id: projectId,
+                        ownerId: user.id,
+                    },
+                    data: {
+                        status: ProjectStatus.IN_REVIEW,
+                    },
+                });
+
+                await prisma.projectModerationLog.create({
+                    data: {
+                        projectId: project.id,
+                        actorId: user.id,
+                        action: 'SUBMITTED',
+                        previousStatus: ProjectStatus.DRAFT,
+                        nextStatus: ProjectStatus.IN_REVIEW,
+                    },
+                });
+                return project;
             });
         } catch (error) {
             if (
                 error instanceof Prisma.PrismaClientKnownRequestError &&
                 error.code === 'P2025'
             ) {
-                throw new NotFoundAppError('Project not found');        
+                throw new NotFoundAppError('Project not found');
             }
 
             throw error;
@@ -233,6 +258,30 @@ export class ProjectService {
         }
     }
 
+    async restoreOwnedProject(user: UserEntity, projectId: string): Promise<ProjectEntity> {
+        try {
+            return await this.prismaService.project.update({
+                where: {
+                    id: projectId,
+                    ownerId: user.id,
+                },
+                data: {
+                    status: ProjectStatus.DRAFT,
+                    archivedAt: null,
+                },
+            });
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                throw new NotFoundAppError('Project not found');
+            }
+
+            throw error;
+        }
+    }
+
     async findPublic(input: PublicProjectQueryInput): Promise<ProjectQueryOutput> {
         const page = input?.pagination?.page ?? 1;
         const limit = input?.pagination?.limit ?? 20;
@@ -242,7 +291,7 @@ export class ProjectService {
 
         const where: Prisma.ProjectWhereInput = {
             status: ProjectStatus.PUBLISHED,
-            visibility: 'PUBLIC',  
+            visibility: 'PUBLIC',
         };
 
         if (input?.filter?.search) {
@@ -302,7 +351,7 @@ export class ProjectService {
         };
     }
 
-    async publishProject(user: UserEntity, projectId: string): Promise<ProjectEntity> {
+    async publishProject(projectId: string): Promise<ProjectEntity> {
         try {
             return await this.prismaService.project.update({
                 where: {
@@ -312,6 +361,76 @@ export class ProjectService {
                     status: ProjectStatus.PUBLISHED,
                     visibility: 'PUBLIC',
                     publishedAt: new Date(),
+                }
+            })
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                throw new NotFoundAppError('Project not found');
+            }
+
+            throw error;
+        }
+    }
+
+    async unpublishProject(projectId: string): Promise<ProjectEntity> {
+        try {
+            return await this.prismaService.project.update({
+                where: {
+                    id: projectId
+                },
+                data: {
+                    status: ProjectStatus.DRAFT,
+                    visibility: 'PRIVATE',
+                }
+            })
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                throw new NotFoundAppError('Project not found');
+            }
+
+            throw error;
+        }
+    }
+
+    async rejectPublishProject(projectId: string): Promise<ProjectEntity> {
+        try {
+            return await this.prismaService.project.update({
+                where: {
+                    id: projectId
+                },
+                data: {
+                    status: ProjectStatus.DRAFT,
+                    visibility: 'PRIVATE',
+                }
+            })
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2025'
+            ) {
+                throw new NotFoundAppError('Project not found');
+            }
+
+            throw error;
+        }
+    }
+
+    async rejectOwnedPublishProject(user: UserEntity, projectId: string): Promise<ProjectEntity> {
+        try {
+            return await this.prismaService.project.update({
+                where: {
+                    id: projectId,
+                    ownerId: user.id,
+                },
+                data: {
+                    status: ProjectStatus.DRAFT,
+                    visibility: 'PRIVATE',
                 }
             })
         } catch (error) {
@@ -350,106 +469,4 @@ export class ProjectService {
             error.code === 'P2002'
         );
     }
-
-    // async getPublicProjects(
-    //     args: GetPublicProjectsArgs,
-    // ): Promise<PaginatedProjectsResponse> {
-    //     const page = Math.max(1, args.page ?? 1);
-    //     const limit = Math.min(50, Math.max(1, args.limit ?? 12));
-    //     const skip = (page - 1) * limit;
-
-    //     const filter: any = {
-    //         status: ProjectStatus.PUBLISHED,
-    //     };
-
-    //     if (args.authorId) {
-    //         filter.authorId = args.authorId;
-    //     }
-
-    //     // if (args.category?.trim()) {
-    //     //     filter.category = args.category.trim();
-    //     // }
-
-    //     // if (args.tags?.length) {
-    //     //     filter.tags = { $in: args.tags };
-    //     // }
-
-    //     const projection: Record<string, unknown> = {};
-
-    //     let sort: Record<string, 1 | -1 | { $meta: 'textScore' }> = {
-    //         publishedAt: -1,
-    //         _id: -1,
-    //     };
-
-    //     if (args.search?.trim()) {
-    //         filter.$text = { $search: args.search.trim() };
-    //         projection.score = { $meta: 'textScore' };
-    //         sort = {
-    //             score: { $meta: 'textScore' },
-    //             publishedAt: -1,
-    //             _id: -1,
-    //         };
-    //     }
-
-    //     const [projects, total] = await Promise.all([
-    //         this.projectModel
-    //             .find(filter, projection)
-    //             .sort(sort)
-    //             .skip(skip)
-    //             .limit(limit)
-    //             .lean()
-    //             .exec(),
-    //         this.projectModel.countDocuments(filter).exec(),
-    //     ]);
-
-    //     return {
-    //         items: projects.map((project) => this.toEntity(project)),
-    //         meta: {
-    //             page,
-    //             limit,
-    //             total,
-    //             totalPages: Math.ceil(total / limit),
-    //             hasNextPage: page * limit < total,
-    //             hasPrevPage: page > 1,
-    //         },
-    //     };
-    // }
-
-    // async getUserProjects(userId: string): Promise<ProjectEntity[]> {
-    //     const projects = await this.projectModel
-    //         .find({ authorId: userId })
-    //         .exec();
-    //     return projects.map(this.toEntity);
-    // }
-
-    // async getAllProjects(): Promise<ProjectEntity[]> {
-    //     const projects = await this.projectModel.find().exec();
-    //     return projects.map(this.toEntity);
-    // }
-
-    // private escapeRegex(value: string): string {
-    //     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    // }
-
-    // async publish(user: UserEntity, projectId: string): Promise<ProjectEntity> {
-    //     const project = await this.projectModel.findById(projectId).exec();
-    //     if (!project) throw new NotFoundAppError('Project not found')
-
-    //     project.status = ProjectStatus.PUBLISHED;
-    //     await project.save();
-
-    //     return this.toEntity(project);
-    // }
-
-    // private toEntity(doc: ProjectDocument): ProjectEntity {
-    //     return {
-    //         id: doc._id.toString(),
-    //         title: doc.title,
-    //         description: doc.description,
-    //         authorId: doc.authorId.toString(),
-    //         status: doc.status,
-    //         createdAt: (doc as any).createdAt,
-    //         updatedAt: (doc as any).updatedAt,
-    //     };
-    // }
 }

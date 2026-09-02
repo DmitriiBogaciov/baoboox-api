@@ -23,6 +23,8 @@ const MODERATOR_PERMISSIONS: Permission[] = [
   Permission.CONTENT_HIDE,
   Permission.PROJECT_PUBLISH,
   Permission.USER_UPDATE,
+  Permission.PROJECT_REJECT_PUBLISH,
+  Permission.PROJECT_UNPUBLISH,
 ];
 
 export const ROLE_PERMISSIONS_MAP: Record<UserRole, Permission[]> = {
