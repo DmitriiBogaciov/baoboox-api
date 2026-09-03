@@ -7,7 +7,6 @@ import { UserEntity } from '../users/entities/user.entity';
 import {
     BadUserInputAppError,
     ConflictAppError,
-    ForbiddenAppError,
     NotFoundAppError,
     ServiceUnavailableAppError,
 } from '../../common/errors';
@@ -149,6 +148,22 @@ export class ProjectService {
             })
         } catch (error) {
             throw new ServiceUnavailableAppError('Failed to retrieve owned projects');
+        }
+    }
+
+    async getProjectById(projectId: string): Promise<ProjectEntity> {
+        try {
+            const project = await this.prismaService.project.findUnique({
+                where: {
+                    id: projectId
+                }
+            })
+            if (!project) {
+                throw new NotFoundAppError('Project not found');
+            }
+            return project;
+        } catch (error) {
+            throw new ServiceUnavailableAppError('Failed to retrieve project');
         }
     }
 

@@ -198,6 +198,7 @@ input PublicProjectQueryInput {
 }
 
 type Query {
+  getProjectById(projectId: String!): ProjectEntity!
   getProjects(input: ProjectQueryInput): ProjectQueryOutput!
   getPublicProjects(input: PublicProjectQueryInput): ProjectQueryOutput!
   getUserById(id: String!): UserEntity!

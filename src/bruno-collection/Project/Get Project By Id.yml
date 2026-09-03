@@ -1,0 +1,44 @@
+info:
+  name: Get Project By Id
+  type: graphql
+  seq: 10
+
+graphql:
+  method: POST
+  url: "{{host-gql}}"
+  body:
+    query: |-
+      query($projectId: String!){
+        getProjectById(projectId: $projectId) {
+          id
+          name
+          ownerId
+          description
+          slug
+         	type
+          status
+          visibility
+          createdAt
+          updatedAt
+          archivedAt
+        }
+      }
+    variables: |-
+      {
+        "projectId": "cmt4t700s0000ejxq42s62gda"
+      }
+  auth:
+    type: bearer
+    token: ""
+
+runtime:
+  scripts:
+    - type: before-request
+      code: req.setHeader('Authorization', `Bearer ${bru.getEnvVar('accessToken')}`)
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

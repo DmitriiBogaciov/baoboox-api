@@ -135,4 +135,13 @@ export class ProjectResolver {
     ): Promise<ProjectEntity[]> {
         return await this.projectService.getOwnedProjects(user);
     }
+
+    @UseGuards(GqlAuthGuard, PermissionsGuard)
+    @Permissions(Permission.PROJECT_VIEW_ANY)
+    @Query(() => ProjectEntity, { name: 'getProjectById' })
+    async getProjectById(
+        @Args('projectId') projectId: string
+    ): Promise<ProjectEntity> {
+        return await this.projectService.getProjectById(projectId);
+    }
 }
